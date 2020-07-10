@@ -1,0 +1,12 @@
+[submodule "client/subprojects/parson"]
+	path = client/subprojects/parson
+	url = https://github.com/kgabis/parson
+[submodule "client/subprojects/krisa"]
+	path = client/subprojects/krisa
+	url = https://github.com/dimkr/krisa
+[submodule "client/subprojects/boydemdb"]
+	path = client/subprojects/boydemdb
+	url = https://github.com/dimkr/boydemdb
+[submodule "client/subprojects/paho.mqtt.embedded-c"]
+	path = client/subprojects/paho.mqtt.embedded-c
+	url = https://github.com/dimkr/paho.mqtt.embedded-c

@@ -1,0 +1,12 @@
+FROM golang:alpine AS builder
+
+ADD cmd/mailman /src/cmd/mailman
+ADD pkg/ /src/pkg
+ADD go.mod /src/go.mod
+ADD go.sum /src/go.sum
+WORKDIR /src
+RUN CGO_ENABLED=0 go build -ldflags "-s -w" -o /mailman ./cmd/mailman
+
+FROM alpine
+COPY --from=builder /mailman /mailman
+CMD /mailman
