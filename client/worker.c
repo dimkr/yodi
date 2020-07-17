@@ -18,6 +18,7 @@
 #include <yodi.h>
 
 #define SHELL_BUFSIZ 1024 * 1024
+#define SHELL_TIMEOUT 5
 
 static void handle_echo(const JSON_Object *cmd, JSON_Object *result)
 {
@@ -90,7 +91,7 @@ static void handle_log(const JSON_Object *cmd, JSON_Object *result)
 
 static void handle_shell(const JSON_Object *cmd, JSON_Object *result)
 {
-	struct timeval tv = {.tv_sec = 5};
+	struct timeval tv = {.tv_sec = SHELL_TIMEOUT};
 	int s[2];
 	yodi_autofree char *buf = NULL;
 	const char *cmdline;
@@ -136,8 +137,11 @@ static void handle_shell(const JSON_Object *cmd, JSON_Object *result)
 		    (dup2(their, STDOUT_FILENO) < 0) ||
 		    (close(their) < 0) ||
 		    (dup2(STDOUT_FILENO, STDERR_FILENO) < 0) ||
-		    (yodi_setsig(STDOUT_FILENO, SIGKILL) < 0))
+		    (yodi_setsig(STDOUT_FILENO, SIGKILL) < 0) ||
+		    (signal(SIGALRM, SIG_DFL) == SIG_ERR))
 			exit(EXIT_FAILURE);
+
+		alarm(SHELL_TIMEOUT);
 
 		execl(_PATH_BSHELL, _PATH_BSHELL, "-c", cmdline, (char *)NULL);
 		exit(EXIT_FAILURE);
