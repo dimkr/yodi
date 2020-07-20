@@ -1,1 +1,1 @@
-option('ssl', type: 'boolean', value: false)
+option('ssl', type: 'boolean')
