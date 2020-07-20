@@ -2,8 +2,6 @@ project('yodi', 'c')
 
 ssl = get_option('ssl')
 
-threads_dependency = dependency('threads')
-
 paho_mqtt_embedded_c = subproject('paho.mqtt.embedded-c',
                                   default_options: [
                                   	'ssl=@0@'.format(ssl),
@@ -28,7 +26,6 @@ krisa = subproject('krisa')
 krisa_dependency = krisa.get_variable('krisa_dependency')
 
 yodi_dependencies = [
-	threads_dependency,
 	libpaho_embed_mqtt3c_dependency,
 	boydemdb_dependency,
 	parson_dependency,
