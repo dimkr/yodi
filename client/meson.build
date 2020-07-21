@@ -34,6 +34,8 @@ if host_machine.cpu_family() != 'mips'
 	krisa_dependency = krisa.get_variable('krisa_dependency')
 
 	yodi_dependencies += krisa_dependency
+
+	yodi_c_args += ['-DYODI_HAVE_KRISA']
 endif
 
 yodi_srcs = [

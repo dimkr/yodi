@@ -11,7 +11,9 @@
 #include <sys/prctl.h>
 #include <stdio.h>
 
-#include <krisa.h>
+#ifdef YODI_HAVE_KRISA
+#	include <krisa.h>
+#endif
 #include <yodi.h>
 
 #define SIGRESTART SIGRTMIN
@@ -146,16 +148,20 @@ int main(int argc, char *argv[])
 	if (sigprocmask(SIG_SETMASK, &mask, NULL) < 0)
 		return EXIT_FAILURE;
 
-#ifdef YODI_DEBUG
+#ifdef YODI_HAVE_KRISA
 	krisa_init(NULL);
-#else
+#endif
+
+#ifdef YODI_DEBUG
 	if (!isatty(STDERR_FILENO)) {
+#else
+	if (1) {
+#endif
 		close(STDERR_FILENO);
 		if (open(YODI_LOG_PATH, O_WRONLY | O_CREAT | O_TRUNC, 0600) < 0)
 			return EXIT_FAILURE;
-		setlinebuf(stderr);		
+		setlinebuf(stderr);
 	}
-#endif
 
 	for (i = 0; i < n; ++i)
 		svcs[i].pid = -1;
