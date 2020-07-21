@@ -5,6 +5,7 @@ ssl = get_option('ssl')
 paho_mqtt_embedded_c = subproject('paho.mqtt.embedded-c',
                                   default_options: [
                                   	'ssl=@0@'.format(ssl),
+                                  	'ssl_verify=@0@'.format(get_option('ssl_verify')),
                                   	'default_library=static',
                                   ])
 libpaho_embed_mqtt3c_dependency = paho_mqtt_embedded_c.get_variable('libpaho_embed_mqtt3c_dependency')

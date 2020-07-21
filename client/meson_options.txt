@@ -1,1 +1,2 @@
 option('ssl', type: 'boolean')
+option('ssl_verify', type: 'boolean')
