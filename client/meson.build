@@ -22,16 +22,19 @@ parson = cmake.subproject('parson', cmake_options: [])
 
 parson_dependency = parson.dependency('parson')
 
-krisa = subproject('krisa')
-
-krisa_dependency = krisa.get_variable('krisa_dependency')
-
 yodi_dependencies = [
 	libpaho_embed_mqtt3c_dependency,
 	boydemdb_dependency,
 	parson_dependency,
-	krisa_dependency,
 ]
+
+if host_machine.cpu_family() != 'mips'
+	krisa = subproject('krisa')
+
+	krisa_dependency = krisa.get_variable('krisa_dependency')
+
+	yodi_dependencies += krisa_dependency
+endif
 
 yodi_srcs = [
 	'log.c',
