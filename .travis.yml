@@ -9,8 +9,8 @@ git:
 
 before_install:
   - python3 -m pip install meson ninja
-  - curl -L https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz | sudo tar -xzvf - -C /
-  - curl -L https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz | sudo tar -xzvf - -C /
+  - curl -L https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz | sudo tar -xzf - -C /
+  - curl -L https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz | sudo tar -xzf - -C /
 
 script:
   - go test ./...
@@ -22,11 +22,6 @@ script:
 addons:
   apt:
     packages:
-      - python3-pip
-      - python3-setuptools
-      - python3-wheel
-      - gcc
-      - cmake
       - unzip
 
 cache: ccache
