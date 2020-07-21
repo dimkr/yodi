@@ -34,9 +34,9 @@ yodi_dependencies = [
 ]
 
 yodi_srcs = [
+	'log.c',
 	'signal.c',
 	'watchdog.c',
-	'yodi.c',
 	'client.c',
 	'worker.c',
 ]
