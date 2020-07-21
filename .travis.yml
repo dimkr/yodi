@@ -19,9 +19,4 @@ script:
   - meson --cross-file=arm-any32-linux-musleabi build-arm && ninja -C build-arm
   - meson --cross-file=mips-any32-linux-musl build-mips && ninja -C build-mips
 
-addons:
-  apt:
-    packages:
-      - unzip
-
 cache: ccache
