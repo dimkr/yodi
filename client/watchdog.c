@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 	if (sigprocmask(SIG_SETMASK, &mask, NULL) < 0)
 		return EXIT_FAILURE;
 
-#ifdef NDEBUG
+#ifdef YODI_DEBUG
 	krisa_init(NULL);
 #else
 	if (!isatty(STDERR_FILENO)) {

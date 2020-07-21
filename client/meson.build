@@ -45,6 +45,10 @@ yodi_c_args = [
 	'-D_GNU_SOURCE',
 ]
 
+if get_option('buildtype').startswith('debug')
+	yodi_c_args += ['-DYODI_DEBUG']
+endif
+
 if ssl
 	yodi_c_args += ['-DYODI_SSL']
 endif

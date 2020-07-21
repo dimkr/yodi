@@ -48,7 +48,7 @@ const char *yodi_progname(void);
 #	define yodi_warn(fmt, ...) fprintf(stderr, "[ %s | %s/%ld ] "fmt"\n", yodi_now(), yodi_progname(), (long)getpid(), __VA_ARGS__)
 #	define yodi_error yodi_warn
 
-#	ifdef NDEBUG
+#	ifdef YODI_DEBUG
 #		define yodi_debug(fmt, ...) do {} while (0)
 #	else
 #		define yodi_debug yodi_warn
