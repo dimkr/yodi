@@ -49,9 +49,9 @@ const char *yodi_progname(void);
 #	define yodi_error yodi_warn
 
 #	ifdef YODI_DEBUG
-#		define yodi_debug(fmt, ...) do {} while (0)
-#	else
 #		define yodi_debug yodi_warn
+#	else
+#		define yodi_debug(fmt, ...) do {} while (0)
 #	endif
 
 #	define YODI_DB_PATH "/tmp/boydem"
