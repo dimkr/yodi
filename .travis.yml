@@ -25,6 +25,7 @@ script:
   - meson configure -Dssl=false build && ninja -C build
   - meson --cross-file=arm-any32-linux-musleabi -Dssl_verify=true build-arm && ninja -C build-arm
   - meson --cross-file=mips-any32-linux-musl -Dssl_verify=true build-mips && ninja -C build-mips
+  - cd ..
   - CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/broker
   - PORT=1883 ./broker &
   - CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/mailman
