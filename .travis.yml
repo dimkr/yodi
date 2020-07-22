@@ -33,7 +33,7 @@ script:
   - ./build/yodi -h localhost -i 0b8e29de-13a1-43cf-a793-4d898440550e -u user1 -p password1 &
   - mosquitto_sub -h localhost -u user2 -P password2 -t /0b8e29de-13a1-43cf-a793-4d898440550e/results > result &
   - sleep 1
-  - mosquitto_pub -h localhost -u user3 -P password3 -t /0b8e29de-13a1-43cf-a793-4d898440550e/commands -m '{"id":"4b1652a9-cf4a-4212-b5e9-09472954de98", "type": "shell", "cmd": "expr 1 + 4"}'
+  - mosquitto_pub -h localhost -u user3 -P password3 -t /0b8e29de-13a1-43cf-a793-4d898440550e/commands -f ci/command.json
   - sleep 5
   - test "`jq -r .result result`" = 5
 
