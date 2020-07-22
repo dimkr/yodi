@@ -19,6 +19,14 @@ type QueuedMessage struct {
 	Message string `json:"messge"`
 }
 
+const (
+	clientSet                 = "/clients"
+	messageQueue              = "/messages"
+	topicSubscribersSetFmt    = "/topic/%s/subscribers"
+	clientSubscriptionsSetFmt = "/client/%s/subscriptions"
+	clientMessageQueueFmt     = "/client/%s/message_queue"
+)
+
 func ConnectToRedis(ctx context.Context) (*redis.Client, error) {
 	opts, err := redis.ParseURL(os.Getenv("REDIS_URL"))
 	if err != nil {
@@ -40,7 +48,7 @@ func NewStore(redisClient *redis.Client) *Store {
 }
 
 func (s *Store) AddClient(ctx context.Context, clientID string) error {
-	n, err := s.redisClient.SAdd(ctx, "clients", clientID).Result()
+	n, err := s.redisClient.SAdd(ctx, clientSet, clientID).Result()
 	if err != nil {
 		return err
 	}
@@ -52,15 +60,24 @@ func (s *Store) AddClient(ctx context.Context, clientID string) error {
 }
 
 func (s *Store) RemoveClient(clientID string) error {
-	if _, err := s.redisClient.SRem(context.Background(), "clients", clientID).Result(); err != nil {
+	if _, err := s.redisClient.SRem(context.Background(), clientSet, clientID).Result(); err != nil {
 		return err
 	}
 
-	if _, err := s.redisClient.Del(context.Background(), "topics:"+clientID).Result(); err != nil {
+	topics, err := s.redisClient.SMembers(context.Background(), fmt.Sprintf(clientSubscriptionsSetFmt, clientID)).Result()
+	if err != nil {
 		return err
 	}
 
-	if _, err := s.redisClient.Del(context.Background(), "messages:"+clientID).Result(); err != nil {
+	for _, topic := range topics {
+		s.redisClient.SRem(context.Background(), fmt.Sprintf(topicSubscribersSetFmt, topic), clientID)
+	}
+
+	if _, err := s.redisClient.Del(context.Background(), fmt.Sprintf(clientSubscriptionsSetFmt, clientID)).Result(); err != nil {
+		return err
+	}
+
+	if _, err := s.redisClient.Del(context.Background(), fmt.Sprintf(clientMessageQueueFmt, clientID)).Result(); err != nil {
 		return err
 	}
 
@@ -68,27 +85,37 @@ func (s *Store) RemoveClient(clientID string) error {
 }
 
 func (s *Store) Subscribe(ctx context.Context, clientID, topic string) error {
-	n, err := s.redisClient.SAdd(ctx, "topics:"+clientID, topic).Result()
+	subscriptions := fmt.Sprintf(clientSubscriptionsSetFmt, clientID)
+
+	n, err := s.redisClient.SAdd(ctx, subscriptions, topic).Result()
 	if err != nil {
 		return err
 	}
 	if n == 0 {
 		log.WithFields(log.Fields{"client_id": clientID, "topic": topic}).Warn("Client is already subscribed to topic")
+		return nil
 	}
 
-	return nil
+	_, err = s.redisClient.SAdd(ctx, fmt.Sprintf(topicSubscribersSetFmt, topic), clientID).Result()
+	if err != nil {
+		s.redisClient.SRem(ctx, subscriptions, topic)
+	}
+
+	return err
 }
 
 func (s *Store) Unsubscribe(ctx context.Context, clientID, topic string) error {
-	n, err := s.redisClient.SRem(ctx, "topics:"+clientID, topic).Result()
+	n, err := s.redisClient.SRem(ctx, fmt.Sprintf(topicSubscribersSetFmt, topic), clientID).Result()
 	if err != nil {
 		return err
 	}
 	if n == 0 {
 		log.WithFields(log.Fields{"client_id": clientID, "topic": topic}).Warn("Client was not subscribed to topic")
+		return nil
 	}
 
-	return nil
+	_, err = s.redisClient.SRem(ctx, fmt.Sprintf(clientSubscriptionsSetFmt, clientID), topic).Result()
+	return err
 }
 
 func decodeMessage(raw []byte) (*QueuedMessage, error) {
@@ -112,7 +139,7 @@ func (s *Store) popMessage(ctx context.Context, queue string) (*QueuedMessage, e
 }
 
 func (s *Store) PopQueuedMessage(ctx context.Context) (*QueuedMessage, error) {
-	return s.popMessage(ctx, "messages")
+	return s.popMessage(ctx, messageQueue)
 }
 
 func (s *Store) QueueMessage(topic string, msg []byte) error {
@@ -121,7 +148,7 @@ func (s *Store) QueueMessage(topic string, msg []byte) error {
 		log.WithError(err).WithFields(log.Fields{"topic": topic, "msg": msg}).Warn("failed to marshal a queued message")
 	}
 
-	_, err = s.redisClient.LPush(context.Background(), "messages", j).Result()
+	_, err = s.redisClient.LPush(context.Background(), messageQueue, j).Result()
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"topic": topic, "msg": msg}).Warn("failed to queue a message")
 	}
@@ -135,24 +162,14 @@ func (s *Store) PushMessage(queuedMessage *QueuedMessage) error {
 	var cursor uint64
 	var clientIDs []string
 	var err error
-	var subscribed bool
 
 	for {
-		clientIDs, cursor, err = s.redisClient.SScan(context.Background(), "clients", cursor, "*", 1).Result()
+		clientIDs, cursor, err = s.redisClient.SScan(context.Background(), fmt.Sprintf(topicSubscribersSetFmt, queuedMessage.Topic), cursor, "*", 1).Result()
 		if err != nil {
 			return err
 		}
 
 		for _, clientID := range clientIDs {
-			subscribed, err = s.redisClient.SIsMember(context.Background(), "topics:"+clientID, queuedMessage.Topic).Result()
-			if err != nil {
-				log.WithError(err).WithFields(log.Fields{"client_id": clientID, "topic": queuedMessage.Topic}).Warn("failed to check whether or not client is subscribed to topic")
-				continue
-			}
-			if !subscribed {
-				continue
-			}
-
 			j, err := json.Marshal(queuedMessage)
 			if err != nil {
 				continue
@@ -160,7 +177,7 @@ func (s *Store) PushMessage(queuedMessage *QueuedMessage) error {
 
 			log.WithFields(log.Fields{"client_id": clientID, "topic": queuedMessage.Topic}).Warn("Pushing message to client")
 
-			_, err = s.redisClient.LPush(context.Background(), "messages:"+clientID, j).Result()
+			_, err = s.redisClient.LPush(context.Background(), fmt.Sprintf(clientMessageQueueFmt, clientID), j).Result()
 			if err != nil {
 				log.WithError(err).WithFields(log.Fields{"client_id": clientID, "topic": queuedMessage.Topic}).Warn("failed to push message to client")
 			}
@@ -175,5 +192,5 @@ func (s *Store) PushMessage(queuedMessage *QueuedMessage) error {
 }
 
 func (s *Store) PopMessage(ctx context.Context, clientID string) (*QueuedMessage, error) {
-	return s.popMessage(ctx, "messages:"+clientID)
+	return s.popMessage(ctx, fmt.Sprintf(clientMessageQueueFmt, clientID))
 }

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	listenAddr = ":2883"
+	defaultPort = "2883"
 )
 
 func handle(broker *mqtt.Broker, conn net.Conn) {
@@ -31,7 +31,11 @@ func main() {
 	log.SetLevel(log.DebugLevel)
 	log.SetFormatter(&log.JSONFormatter{})
 
-	listener, err := net.Listen("tcp", listenAddr)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = defaultPort
+	}
+	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatal(err)
 	}
