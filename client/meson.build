@@ -28,6 +28,10 @@ yodi_dependencies = [
 	parson_dependency,
 ]
 
+yodi_c_args = [
+	'-D_GNU_SOURCE',
+]
+
 if host_machine.cpu_family() != 'mips'
 	krisa = subproject('krisa')
 
@@ -38,18 +42,6 @@ if host_machine.cpu_family() != 'mips'
 	yodi_c_args += ['-DYODI_HAVE_KRISA']
 endif
 
-yodi_srcs = [
-	'log.c',
-	'signal.c',
-	'watchdog.c',
-	'client.c',
-	'worker.c',
-]
-
-yodi_c_args = [
-	'-D_GNU_SOURCE',
-]
-
 if get_option('buildtype').startswith('debug')
 	yodi_c_args += ['-DYODI_DEBUG']
 endif
@@ -57,6 +49,14 @@ endif
 if ssl
 	yodi_c_args += ['-DYODI_SSL']
 endif
+
+yodi_srcs = [
+	'log.c',
+	'signal.c',
+	'watchdog.c',
+	'client.c',
+	'worker.c',
+]
 
 yodi = executable('yodi',
                   yodi_srcs,
