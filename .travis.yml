@@ -22,7 +22,7 @@ script:
   - go test ./...
   - cd client
   - meson build && ninja -C build
-  - meson configure -Dssl=false build && ninja -C build
+  - meson -Dssl=false build-no-ssl && ninja -C build-no-ssl
   - meson --cross-file=arm-any32-linux-musleabi -Dssl_verify=true build-arm && ninja -C build-arm
   - meson --cross-file=mips-any32-linux-musl -Dssl_verify=true build-mips && ninja -C build-mips
   - cd ..
@@ -33,7 +33,7 @@ script:
   - CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/mailman
   - ./mailman &
   - sleep 1
-  - ./client/build/yodi -h localhost -i 0b8e29de-13a1-43cf-a793-4d898440550e -u user1 -p password1 &
+  - ./client/build-no-ssl/yodi -h localhost -i 0b8e29de-13a1-43cf-a793-4d898440550e -u user1 -p password1 &
   - mosquitto_sub -h localhost -u user2 -P password2 -t /0b8e29de-13a1-43cf-a793-4d898440550e/results > result &
   - sleep 1
   - mosquitto_pub -h localhost -u user3 -P password3 -t /0b8e29de-13a1-43cf-a793-4d898440550e/commands -f ci/command.json
