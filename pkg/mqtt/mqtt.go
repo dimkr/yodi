@@ -411,8 +411,9 @@ func (c *Client) readConnect() error {
 		return err
 	}
 
-	if string(connectFixedHeader.ProtocolName[:]) != ProtocolName {
-		return errors.New("Bad protocol name")
+	proto := string(connectFixedHeader.ProtocolName[:])
+	if proto != ProtocolName {
+		return fmt.Errorf("Bad protocol name: %s", proto)
 	}
 
 	if connectFixedHeader.ProtocolVersion != ProtocolVersion {
