@@ -66,7 +66,6 @@ type StringWriter struct {
 type Client struct {
 	clientID             string
 	logFields            log.Fields
-	topics               sync.Map
 	reader               io.Reader
 	writer               io.Writer
 	ctx                  context.Context
@@ -143,7 +142,6 @@ func NewClient(parent context.Context, conn net.Conn, store *Store) (*Client, er
 	ctx, cancel := context.WithDeadline(parent, t)
 	return &Client{
 		logFields: log.Fields{},
-		topics:    sync.Map{},
 		reader:    conn,
 		writer:    conn,
 		ctx:       ctx,
@@ -296,11 +294,6 @@ func (c *Client) deliverMessages() {
 }
 
 func (c *Client) handleSubscribe(messageID uint16, topic string, qos QoS) error {
-	if _, ok := c.topics.Load(topic); ok {
-		log.WithFields(c.logFields).Warn("Already subscribed to ", topic)
-		return nil
-	}
-
 	if err := c.authenticateSubscribe(topic, qos); err != nil {
 		return err
 	}
@@ -325,11 +318,6 @@ func (c *Client) handleSubscribe(messageID uint16, topic string, qos QoS) error 
 }
 
 func (c *Client) handleUnsubscribe(messageID uint16, topic string) error {
-	if _, ok := c.topics.Load(topic); !ok {
-		log.WithFields(c.logFields).Warn("Not subscribed to ", topic)
-		return nil
-	}
-
 	log.WithFields(c.logFields).Info("unsubscribing from ", topic)
 
 	if err := c.store.Unsubscribe(c.ctx, c.clientID, topic); err != nil {
@@ -342,7 +330,6 @@ func (c *Client) handleUnsubscribe(messageID uint16, topic string) error {
 		return err
 	}
 
-	c.topics.Delete(topic)
 	return nil
 }
 
