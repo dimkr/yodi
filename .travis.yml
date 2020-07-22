@@ -17,7 +17,7 @@ script:
   - cd client
   - meson -Dssl=false build && ninja -C build
   - meson configure -Dssl=true build && ninja -C build
-  - meson --cross-file=arm-any32-linux-musleabi -Dssl_verify=true build-arm && build/subprojects/boydemdb/sqlite3.{c,h} build-arm/subprojects/boydemdb/ && ninja -C build-arm
-  - meson --cross-file=mips-any32-linux-musl -Dssl_verify=true build-mips && build/subprojects/boydemdb/sqlite3.{c,h} build-mips/subprojects/boydemdb/ && ninja -C build-mips
+  - meson --cross-file=arm-any32-linux-musleabi -Dssl_verify=true build-arm && cp -f build/subprojects/boydemdb/sqlite3.{c,h} build-arm/subprojects/boydemdb/ && ninja -C build-arm
+  - meson --cross-file=mips-any32-linux-musl -Dssl_verify=true build-mips && cp -f build/subprojects/boydemdb/sqlite3.{c,h} build-mips/subprojects/boydemdb/ && ninja -C build-mips
 
 cache: ccache
