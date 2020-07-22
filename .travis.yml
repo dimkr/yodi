@@ -10,9 +10,9 @@ git:
 install:
   - python3 -m pip install meson ninja
   - mkdir -p ~/toolchains
-  - [ -f ~/toolchains/arm-any32-linux-musleabi.tar.gz ] || curl -Lo ~/toolchains/arm-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz
+  - test -f ~/toolchains/arm-any32-linux-musleabi.tar.gz || curl -Lo ~/toolchains/arm-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz
   - sudo tar -xzf ~/toolchains/arm-any32-linux-musleabi.tar.gz -C /
-  - [ -f ~/toolchains/mips-any32-linux-musl.tar.gz ] || curl -Lo ~/toolchains/mips-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz
+  - test -f ~/toolchains/mips-any32-linux-musl.tar.gz || curl -Lo ~/toolchains/mips-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz
   - sudo tar -xzf ~/toolchains/mips-any32-linux-musl.tar.gz -C /
 
 script:
