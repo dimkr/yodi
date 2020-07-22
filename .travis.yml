@@ -33,7 +33,7 @@ script:
   - CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/mailman
   - ./mailman &
   - sleep 1
-  - ../build/yodi -h localhost -i 0b8e29de-13a1-43cf-a793-4d898440550e -u user1 -p password1 &
+  - ../client/build/yodi -h localhost -i 0b8e29de-13a1-43cf-a793-4d898440550e -u user1 -p password1 &
   - mosquitto_sub -h localhost -u user2 -P password2 -t /0b8e29de-13a1-43cf-a793-4d898440550e/results > result &
   - sleep 1
   - mosquitto_pub -h localhost -u user3 -P password3 -t /0b8e29de-13a1-43cf-a793-4d898440550e/commands -f ci/command.json
