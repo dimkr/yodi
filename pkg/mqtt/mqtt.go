@@ -99,6 +99,10 @@ const (
 	ProtocolVersion               = 4
 
 	connectionTimeout = time.Hour
+
+	maxTopicLength    = 64
+	maxUsernameLength = 64
+	maxPasswordLength = 64
 )
 
 var ErrDisconnected = errors.New("Client has disconnected")
@@ -341,7 +345,7 @@ func (c *Client) handlePublish(topic string, msg []byte) error {
 func (c *Client) readPublish(hdr Header) error {
 	stringReader := StringReader{c.reader}
 
-	buf := make([]byte, 64)
+	buf := make([]byte, maxTopicLength)
 	n, err := stringReader.Read(buf)
 	if err != nil {
 		return err
@@ -415,7 +419,7 @@ func (c *Client) readConnect() error {
 
 	stringReader := StringReader{c.reader}
 
-	buf := make([]byte, 64)
+	buf := make([]byte, maxTopicLength)
 	n, err := stringReader.Read(buf)
 	if err != nil {
 		return err
@@ -425,6 +429,7 @@ func (c *Client) readConnect() error {
 	}
 	clientID := string(buf[:n])
 
+	buf = make([]byte, maxUsernameLength)
 	n, err = stringReader.Read(buf)
 	if err != nil {
 		return err
@@ -434,6 +439,7 @@ func (c *Client) readConnect() error {
 	}
 	username := string(buf[:n])
 
+	buf = make([]byte, maxPasswordLength)
 	n, err = stringReader.Read(buf)
 	if err != nil {
 		return err
@@ -454,7 +460,7 @@ func (c *Client) readSubscribe() error {
 
 	stringReader := StringReader{c.reader}
 
-	buf := make([]byte, 64)
+	buf := make([]byte, maxTopicLength)
 	n, err := stringReader.Read(buf)
 	if err != nil {
 		return err
@@ -484,7 +490,7 @@ func (c *Client) readUnsubscribe() error {
 
 	stringReader := StringReader{c.reader}
 
-	topic := make([]byte, 64)
+	topic := make([]byte, maxTopicLength)
 	n, err := stringReader.Read(topic)
 	if err != nil {
 		return err
