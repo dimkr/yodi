@@ -466,7 +466,7 @@ func (c *Client) readSubscribe() error {
 
 	stringReader := StringReader{c.reader}
 
-	buf := make([]byte, 32)
+	buf := make([]byte, 64)
 	n, err := stringReader.Read(buf)
 	if err != nil {
 		return err
