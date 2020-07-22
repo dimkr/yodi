@@ -92,7 +92,7 @@ func (s *Store) Subscribe(ctx context.Context, clientID, topic string) error {
 		return err
 	}
 	if n == 0 {
-		log.WithFields(log.Fields{"client_id": clientID, "topic": topic}).Warn("Client is already subscribed to topic")
+		log.WithFields(log.Fields{"client_id": clientID, "topic": topic}).Debug("Client is already subscribed to topic")
 		return nil
 	}
 
@@ -110,7 +110,7 @@ func (s *Store) Unsubscribe(ctx context.Context, clientID, topic string) error {
 		return err
 	}
 	if n == 0 {
-		log.WithFields(log.Fields{"client_id": clientID, "topic": topic}).Warn("Client was not subscribed to topic")
+		log.WithFields(log.Fields{"client_id": clientID, "topic": topic}).Debug("Client was not subscribed to topic")
 		return nil
 	}
 
@@ -143,22 +143,22 @@ func (s *Store) PopQueuedMessage(ctx context.Context) (*QueuedMessage, error) {
 }
 
 func (s *Store) QueueMessage(topic string, msg []byte) error {
+	log.WithFields(log.Fields{"topic": topic, "message": string(msg)}).Info("Queueing a message")
+
 	j, err := json.Marshal(QueuedMessage{Topic: topic, Message: string(msg)})
 	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"topic": topic, "msg": msg}).Warn("failed to marshal a queued message")
+		log.WithError(err).WithFields(log.Fields{"topic": topic, "message": msg}).Warn("failed to marshal a queued message")
 	}
 
 	_, err = s.redisClient.LPush(context.Background(), messageQueue, j).Result()
 	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"topic": topic, "msg": msg}).Warn("failed to queue a message")
+		log.WithError(err).WithFields(log.Fields{"topic": topic, "message": msg}).Warn("failed to queue a message")
 	}
 
 	return err
 }
 
 func (s *Store) PushMessage(queuedMessage *QueuedMessage) error {
-	log.Info("Getting the list of client IDs")
-
 	var cursor uint64
 	var clientIDs []string
 	var err error
@@ -175,7 +175,7 @@ func (s *Store) PushMessage(queuedMessage *QueuedMessage) error {
 				continue
 			}
 
-			log.WithFields(log.Fields{"client_id": clientID, "topic": queuedMessage.Topic}).Warn("Pushing message to client")
+			log.WithFields(log.Fields{"client_id": clientID, "topic": queuedMessage.Topic, "message": queuedMessage.Message}).Debug("Pushing message to client")
 
 			_, err = s.redisClient.LPush(context.Background(), fmt.Sprintf(clientMessageQueueFmt, clientID), j).Result()
 			if err != nil {
