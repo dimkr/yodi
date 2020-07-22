@@ -497,7 +497,7 @@ func (c *Client) readUnsubscribe() error {
 
 	stringReader := StringReader{c.reader}
 
-	topic := make([]byte, 32)
+	topic := make([]byte, 64)
 	n, err := stringReader.Read(topic)
 	if err != nil {
 		return err
