@@ -8,10 +8,10 @@
 #include <yodi.h>
 
 #define MQTT_BUFSIZ 1024 * 1024
-#define MQTT_TIMEOUT 5000
+#define MQTT_TIMEOUT 3000
 
 #define SIGMQTT 5
-#define RESULT_POLL_INTERVAL 5
+#define RESULT_POLL_INTERVAL 1
 
 #ifdef YODI_SSL
 #	define MQTT_PORT 8883
