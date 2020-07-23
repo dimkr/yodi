@@ -32,7 +32,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			err = store.PushMessage(queuedMessage)
+			err = store.QueueMessageForSubscribers(queuedMessage)
 			if err != nil {
 				log.Fatal(err)
 			}

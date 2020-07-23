@@ -18,6 +18,11 @@ func (c *Client) authenticateSubscribe(topic string, qos QoS) error {
 	return nil
 }
 
+const (
+	QoS0 = iota
+	QoS1
+)
+
 func (c *Client) handleSubscribe(messageID uint16, topic string, qos QoS) error {
 	if err := c.authenticateSubscribe(topic, qos); err != nil {
 		return err

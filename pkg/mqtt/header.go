@@ -1,6 +1,9 @@
 package mqtt
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type Header struct {
 	Flags         uint8
@@ -18,19 +21,33 @@ const (
 	Unsubscribe    MessageType = 0b1010
 	UnsubscribeAck MessageType = 0b1011
 	Publish        MessageType = 0b0011
+	PublishAck     MessageType = 0b0100
 	PingRequest    MessageType = 0b1100
 	PingResponse   MessageType = 0b1101
+
+	qosMask  = 0b00000110
+	qosShift = 1
 
 	ProtocolName    = "MQTT"
 	ProtocolVersion = 4
 )
 
-func (c *Client) writeFixedHeader(messageType MessageType, messageLength int) error {
+func (h *Header) GetQoS() (QoS, error) {
+	qos := QoS((h.Flags & qosMask) >> qosShift)
+
+	if qos != QoS0 && qos != QoS1 {
+		return QoS0, fmt.Errorf("invalid QoS level: %d", qos)
+	}
+
+	return qos, nil
+}
+
+func (c *Client) writeFixedHeader(messageType MessageType, messageLength int, qos QoS) error {
 	if messageLength > 16383 {
 		return errors.New("Message is too long")
 	}
 
-	hdr := append([]byte{uint8(messageType) << 4}, encodeRemainingLength(uint32(messageLength))...)
+	hdr := append([]byte{(uint8(messageType) << 4) | (uint8(qos) << qosShift)}, encodeRemainingLength(uint32(messageLength))...)
 
 	n, err := c.writer.Write(hdr)
 	if err != nil {

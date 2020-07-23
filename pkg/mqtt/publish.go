@@ -1,13 +1,22 @@
 package mqtt
 
 import (
+	"encoding/binary"
 	"errors"
 
 	log "github.com/sirupsen/logrus"
 )
 
-func (c *Client) handlePublish(topic string, msg []byte) error {
-	return c.store.QueueMessage(topic, msg)
+func (c *Client) handlePublish(topic string, msg []byte, messageID uint16, qos QoS) error {
+	if err := c.store.QueueMessage(topic, msg, qos); err != nil {
+		return err
+	}
+
+	if qos == QoS0 {
+		return nil
+	}
+
+	return c.writePublishAck(messageID)
 }
 
 func (c *Client) readPublish(hdr Header) error {
@@ -23,11 +32,33 @@ func (c *Client) readPublish(hdr Header) error {
 	}
 	topic := string(buf[:n])
 
-	if int(hdr.MessageLength) <= len(topic)+2 {
+	qos, err := hdr.GetQoS()
+	if err != nil {
+		return err
+	}
+
+	var messageID uint16
+	headerSize := len(topic) + 2
+
+	switch qos {
+	case QoS0:
+
+	case QoS1:
+		if err := binary.Read(c.reader, binary.BigEndian, &messageID); err != nil {
+			return err
+		}
+
+		headerSize += 2
+
+	default:
+		return errors.New("unknown QoS level")
+	}
+
+	if int(hdr.MessageLength) <= headerSize {
 		return errors.New("no message")
 	}
 
-	buf = make([]byte, int(hdr.MessageLength)-len(topic)-2)
+	buf = make([]byte, int(hdr.MessageLength)-headerSize)
 	total := 0
 	for total < len(buf) {
 		n, err = c.reader.Read(buf[total:])
@@ -40,24 +71,25 @@ func (c *Client) readPublish(hdr Header) error {
 		total += n
 	}
 
-	return c.handlePublish(topic, buf)
+	return c.handlePublish(topic, buf, messageID, qos)
 }
 
-func (c *Client) publish(topic string, msg []byte) error {
-	log.WithFields(c.logFields).WithFields(log.Fields{"topic": topic, "msg": string(msg)}).Info("Passing a message")
+func (c *Client) publish(queuedMessage *QueuedMessage) error {
+	log.WithFields(c.logFields).WithFields(queuedMessage.LogFields()).Info("Delivering a message")
 
-	messageLength := 2 + len(topic) + len(msg)
+	messageLength := 2 + len(queuedMessage.Topic) + len(queuedMessage.Message)
 	if messageLength > 255 {
 		return errors.New("message is too big")
 	}
 
-	if err := c.writeFixedHeader(Publish, messageLength); err != nil {
+	if err := c.writeFixedHeader(Publish, messageLength, queuedMessage.QoS); err != nil {
 		return err
 	}
 
 	stringWriter := StringWriter{c.writer}
 
-	n, err := stringWriter.Write([]byte(topic))
+	topic := []byte(queuedMessage.Topic)
+	n, err := stringWriter.Write(topic)
 	if err != nil {
 		return err
 	}
@@ -65,6 +97,7 @@ func (c *Client) publish(topic string, msg []byte) error {
 		return errors.New("failed to send the topic")
 	}
 
+	msg := []byte(queuedMessage.Message)
 	n, err = c.writer.Write(msg)
 	if err != nil {
 		return err

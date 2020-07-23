@@ -65,7 +65,7 @@ func (c *Client) deliverMessages() {
 	log.WithFields(c.logFields).Info("Starting message delivery routine")
 
 	for {
-		queuedMessage, err := c.store.PopMessage(c.ctx, c.clientID)
+		queuedMessage, err := c.store.PopMessageForSubscriber(c.ctx, c.clientID)
 		if err != nil {
 			if c.ctx.Err() == nil {
 				log.WithError(err).Warn("Failed to pop a message")
@@ -73,7 +73,10 @@ func (c *Client) deliverMessages() {
 			break
 		}
 
-		c.publish(queuedMessage.Topic, []byte(queuedMessage.Message))
+		if err := c.publish(queuedMessage); err != nil {
+			// if we failed to publish the message to the client, push it back to the queue
+			c.store.QueueMessageForSubscriber(c.ctx, c.clientID, queuedMessage)
+		}
 	}
 
 	log.WithFields(c.logFields).Info("Stopping message delivery routine")
@@ -96,6 +99,9 @@ func (c *Client) readPacket() error {
 	switch messageType {
 	case Publish:
 		return c.readPublish(hdr)
+
+	case PublishAck:
+		return c.readPublishAck()
 
 	case PingRequest:
 		return c.readPing(hdr)

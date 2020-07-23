@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/rs/xid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -15,8 +16,10 @@ type Store struct {
 }
 
 type QueuedMessage struct {
+	ID      xid.ID `json:"id"`
 	Topic   string `json:"topic"`
-	Message string `json:"messge"`
+	Message string `json:"message"`
+	QoS     QoS    `json:"qos"`
 }
 
 const (
@@ -26,6 +29,10 @@ const (
 	clientSubscriptionsSetFmt = "/client/%s/subscriptions"
 	clientMessageQueueFmt     = "/client/%s/message_queue"
 )
+
+func (m *QueuedMessage) LogFields() log.Fields {
+	return log.Fields{"id": m.ID.String(), "topic": m.Topic}
+}
 
 func ConnectToRedis(ctx context.Context) (*redis.Client, error) {
 	opts, err := redis.ParseURL(os.Getenv("REDIS_URL"))
@@ -122,7 +129,7 @@ func decodeMessage(raw []byte) (*QueuedMessage, error) {
 	var msg QueuedMessage
 	err := json.Unmarshal(raw, &msg)
 	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"raw": raw}).Warn("failed to decode a message")
+		log.WithFields(log.Fields{"raw": raw}).WithError(err).Warn("failed to decode a message")
 		return nil, err
 	}
 
@@ -142,23 +149,26 @@ func (s *Store) PopQueuedMessage(ctx context.Context) (*QueuedMessage, error) {
 	return s.popMessage(ctx, messageQueue)
 }
 
-func (s *Store) QueueMessage(topic string, msg []byte) error {
-	log.WithFields(log.Fields{"topic": topic, "message": string(msg)}).Info("Queueing a message")
+func (s *Store) QueueMessage(topic string, msg []byte, qos QoS) error {
+	queuedMessage := QueuedMessage{ID: xid.New(), Topic: topic, Message: string(msg), QoS: qos}
 
-	j, err := json.Marshal(QueuedMessage{Topic: topic, Message: string(msg)})
+	log.WithFields(queuedMessage.LogFields()).Info("Queueing a message")
+
+	j, err := json.Marshal(queuedMessage)
 	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"topic": topic, "message": msg}).Warn("failed to marshal a queued message")
+		log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to marshal a queued message")
+		return err
 	}
 
 	_, err = s.redisClient.LPush(context.Background(), messageQueue, j).Result()
 	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"topic": topic, "message": msg}).Warn("failed to queue a message")
+		log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to queue a message")
 	}
 
 	return err
 }
 
-func (s *Store) PushMessage(queuedMessage *QueuedMessage) error {
+func (s *Store) QueueMessageForSubscribers(queuedMessage *QueuedMessage) error {
 	var cursor uint64
 	var clientIDs []string
 	var err error
@@ -170,16 +180,8 @@ func (s *Store) PushMessage(queuedMessage *QueuedMessage) error {
 		}
 
 		for _, clientID := range clientIDs {
-			j, err := json.Marshal(queuedMessage)
-			if err != nil {
+			if err := s.QueueMessageForSubscriber(context.Background(), clientID, queuedMessage); err != nil {
 				continue
-			}
-
-			log.WithFields(log.Fields{"client_id": clientID, "topic": queuedMessage.Topic, "message": queuedMessage.Message}).Debug("Pushing message to client")
-
-			_, err = s.redisClient.LPush(context.Background(), fmt.Sprintf(clientMessageQueueFmt, clientID), j).Result()
-			if err != nil {
-				log.WithError(err).WithFields(log.Fields{"client_id": clientID, "topic": queuedMessage.Topic}).Warn("failed to push message to client")
 			}
 		}
 
@@ -191,6 +193,22 @@ func (s *Store) PushMessage(queuedMessage *QueuedMessage) error {
 	return nil
 }
 
-func (s *Store) PopMessage(ctx context.Context, clientID string) (*QueuedMessage, error) {
+func (s *Store) QueueMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error {
+	log.WithFields(queuedMessage.LogFields()).WithField("client_id", clientID).Debug("Pushing message to client")
+
+	j, err := json.Marshal(queuedMessage)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.redisClient.LPush(context.Background(), fmt.Sprintf(clientMessageQueueFmt, clientID), j).Result()
+	if err != nil {
+		log.WithFields(queuedMessage.LogFields()).WithField("client_id", clientID).WithError(err).Warn("failed to push message to client")
+	}
+
+	return err
+}
+
+func (s *Store) PopMessageForSubscriber(ctx context.Context, clientID string) (*QueuedMessage, error) {
 	return s.popMessage(ctx, fmt.Sprintf(clientMessageQueueFmt, clientID))
 }

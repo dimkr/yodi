@@ -7,7 +7,7 @@ type UnsubscribeAckFixedHeader struct {
 }
 
 func (c *Client) writeUnsubscribeAck(messageID uint16) error {
-	if err := c.writeFixedHeader(UnsubscribeAck, 2); err != nil {
+	if err := c.writeFixedHeader(UnsubscribeAck, 2, 0); err != nil {
 		return err
 	}
 

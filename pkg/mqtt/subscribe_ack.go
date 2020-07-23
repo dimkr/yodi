@@ -8,7 +8,7 @@ type SubscribeAckFixedHeader struct {
 }
 
 func (c *Client) writeSubscribeAck(messageID uint16, qos QoS) error {
-	if err := c.writeFixedHeader(SubscribeAck, 3); err != nil {
+	if err := c.writeFixedHeader(SubscribeAck, 3, 0); err != nil {
 		return err
 	}
 

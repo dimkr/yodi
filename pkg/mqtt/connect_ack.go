@@ -14,7 +14,7 @@ type ConnectAckFixedHeader struct {
 }
 
 func (c *Client) writeConnectAck(code ReturnCode) error {
-	if err := c.writeFixedHeader(ConnectAck, 2); err != nil {
+	if err := c.writeFixedHeader(ConnectAck, 2, 0); err != nil {
 		return err
 	}
 
