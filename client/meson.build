@@ -42,7 +42,7 @@ if host_machine.cpu_family() != 'mips'
 	yodi_c_args += ['-DYODI_HAVE_KRISA']
 endif
 
-if get_option('buildtype').startswith('debug')
+if get_option('debug')
 	yodi_c_args += ['-DYODI_DEBUG']
 endif
 
