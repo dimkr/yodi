@@ -89,12 +89,6 @@ func (c *Client) publish(queuedMessage *QueuedMessage) error {
 		return err
 	}
 
-	if queuedMessage.QoS == QoS1 {
-		if err := binary.Write(c.writer, binary.BigEndian, &queuedMessage.ID); err != nil {
-			return err
-		}
-	}
-
 	stringWriter := StringWriter{c.writer}
 
 	topic := []byte(queuedMessage.Topic)
@@ -104,6 +98,12 @@ func (c *Client) publish(queuedMessage *QueuedMessage) error {
 	}
 	if n != len(topic) {
 		return errors.New("failed to send the topic")
+	}
+
+	if queuedMessage.QoS == QoS1 {
+		if err := binary.Write(c.writer, binary.BigEndian, &queuedMessage.ID); err != nil {
+			return err
+		}
 	}
 
 	msg := []byte(queuedMessage.Message)
