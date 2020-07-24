@@ -8,7 +8,7 @@ import (
 )
 
 func (c *Client) handlePublish(topic string, msg []byte, messageID uint16, qos QoS) error {
-	if err := c.store.QueueMessage(topic, msg, qos); err != nil {
+	if err := c.store.QueueMessage(topic, msg, messageID, qos); err != nil {
 		return err
 	}
 
@@ -78,12 +78,21 @@ func (c *Client) publish(queuedMessage *QueuedMessage) error {
 	log.WithFields(c.logFields).WithFields(queuedMessage.LogFields()).Info("Delivering a message")
 
 	messageLength := 2 + len(queuedMessage.Topic) + len(queuedMessage.Message)
+	if queuedMessage.QoS == QoS1 {
+		messageLength += 2
+	}
 	if messageLength > 255 {
 		return errors.New("message is too big")
 	}
 
 	if err := c.writeFixedHeader(Publish, messageLength, queuedMessage.QoS); err != nil {
 		return err
+	}
+
+	if queuedMessage.QoS == QoS1 {
+		if err := binary.Write(c.writer, binary.BigEndian, &queuedMessage.ID); err != nil {
+			return err
+		}
 	}
 
 	stringWriter := StringWriter{c.writer}

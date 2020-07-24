@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/rs/xid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,7 +15,7 @@ type Store struct {
 }
 
 type QueuedMessage struct {
-	ID      xid.ID `json:"id"`
+	ID      uint16 `json:"id"`
 	Topic   string `json:"topic"`
 	Message string `json:"message"`
 	QoS     QoS    `json:"qos"`
@@ -31,7 +30,7 @@ const (
 )
 
 func (m *QueuedMessage) LogFields() log.Fields {
-	return log.Fields{"id": m.ID.String(), "topic": m.Topic}
+	return log.Fields{"id": m.ID, "topic": m.Topic}
 }
 
 func ConnectToRedis(ctx context.Context) (*redis.Client, error) {
@@ -149,8 +148,8 @@ func (s *Store) PopQueuedMessage(ctx context.Context) (*QueuedMessage, error) {
 	return s.popMessage(ctx, messageQueue)
 }
 
-func (s *Store) QueueMessage(topic string, msg []byte, qos QoS) error {
-	queuedMessage := QueuedMessage{ID: xid.New(), Topic: topic, Message: string(msg), QoS: qos}
+func (s *Store) QueueMessage(topic string, msg []byte, messageID uint16, qos QoS) error {
+	queuedMessage := QueuedMessage{ID: messageID, Topic: topic, Message: string(msg), QoS: qos}
 
 	log.WithFields(queuedMessage.LogFields()).Info("Queueing a message")
 
