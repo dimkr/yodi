@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.WarnLevel)
 	log.SetFormatter(&log.JSONFormatter{})
 
 	ctx, cancel := context.WithCancel(context.Background())
