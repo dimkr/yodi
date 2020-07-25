@@ -29,6 +29,7 @@ func handle(broker *mqtt.Broker, conn net.Conn) {
 
 func main() {
 	log.SetLevel(log.WarnLevel)
+	log.SetReportCaller(true)
 	log.SetFormatter(&log.JSONFormatter{})
 
 	port := os.Getenv("PORT")
