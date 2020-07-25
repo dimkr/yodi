@@ -10,7 +10,7 @@
 #define MQTT_BUFSIZ 1024 * 1024
 #define MQTT_TIMEOUT 3000
 
-#define SIGMQTT 5
+#define SIGMQTT SIGRTMIN
 #define RESULT_POLL_INTERVAL 1
 
 #ifdef YODI_SSL
@@ -119,7 +119,8 @@ parsed:
 
 	if ((sigemptyset(&set) < 0) ||
 	    (sigaddset(&set, SIGTERM) < 0) ||
-	    (sigaddset(&set, SIGMQTT) < 0))
+	    (sigaddset(&set, SIGMQTT) < 0) ||
+	    (sigprocmask(SIG_BLOCK, &set, NULL) < 0))
 		return EXIT_FAILURE;
 
 	rxbuf = malloc(MQTT_BUFSIZ);
