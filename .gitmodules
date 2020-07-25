@@ -10,3 +10,6 @@
 [submodule "client/subprojects/paho.mqtt.embedded-c"]
 	path = client/subprojects/paho.mqtt.embedded-c
 	url = https://github.com/dimkr/paho.mqtt.embedded-c
+[submodule "client/subprojects/papaw"]
+	path = client/subprojects/papaw
+	url = https://github.com/dimkr/papaw/

@@ -1,0 +1,45 @@
+# This file is part of yodi.
+#
+# Copyright 2020 Dima Krasner
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+FROM dimkr/c-dev AS cross
+
+ADD build/cross_compile.sh /tmp/
+ADD client .
+RUN /tmp/cross_compile.sh arm-any32-linux-musleabi /tmp/yodi-arm
+RUN /tmp/cross_compile.sh mips-any32-linux-musl /tmp/yodi-mips
+RUN /tmp/cross_compile.sh armeb-any32-linux-musleabi /tmp/yodi-armeb
+RUN /tmp/cross_compile.sh mipsel-any32-linux-musl /tmp/yodi-mipsel
+RUN /tmp/cross_compile.sh i386-any32-linux-musl /tmp/yodi-i386
+
+FROM golang:alpine AS builder
+
+ADD cmd/web /src/cmd/web
+ADD go.mod /src/go.mod
+ADD go.sum /src/go.sum
+WORKDIR /src
+RUN CGO_ENABLED=0 go build -ldflags "-s -w" -o /web ./cmd/web
+
+FROM alpine
+
+COPY --from=cross /tmp/yodi-arm /static/yodi-arm
+COPY --from=cross /tmp/yodi-mips /static/yodi-mips
+COPY --from=cross /tmp/yodi-armeb /static/yodi-armeb
+COPY --from=cross /tmp/yodi-mipsel /static/yodi-mipsel
+COPY --from=cross /tmp/yodi-i386 /static/yodi-i386
+COPY --from=builder /web /web
+
+CMD /web
+EXPOSE 8000

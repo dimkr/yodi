@@ -23,7 +23,6 @@ yodi is in its infancy.
 
 * A variety of basic commands understood by the client
 * Compression of command results using [miniz](https://github.com/richgel999/miniz)
-* Packing with [papaw](github.com/dimkr/papaw), to make the client executable much smaller
 * A HTTP microservice that serves static assets like the client executable, and an installation script that can be piped to the shell in a [curl](https://curl.haxx.se/) one-liner
 * Saving of command results in a persistent database
 * Crash reporting using [krisa](github.com/dimkr/krisa)
@@ -38,7 +37,7 @@ The yodi client is implemented in C, using [a fork](https://github.com/dimkr/pah
 
 The glue that holds all these pieces together is [Meson](https://mesonbuild.com/) and cross-compilation is done using a collection [musl](https://musl.libc.org/)-based [toolchains](https://github.com/dimkr/toolchains).
 
-The client uses a multi-process architecture without use of execve(), to reduce its memory consumption once [papaw](github.com/dimkr/papaw). If the executable is extracted to anonymous memory by the packer stub, every execve() is expensive.
+The client uses a multi-process architecture without use of execve(), to reduce its memory consumption. The executable is extracted to anonymous memory by the [papaw](github.com/dimkr/papaw) stub, so every execve() is expensive.
 
 Communication between the client processes, or between a client process and the backend, is done through a [SQLite](https://www.sqlite.org/) database.
 

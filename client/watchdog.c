@@ -32,6 +32,7 @@
 #ifdef YODI_HAVE_KRISA
 #	include <krisa.h>
 #endif
+#include <papaw.h>
 #include <yodi.h>
 
 #define SIGRESTART SIGRTMIN
@@ -165,6 +166,8 @@ int main(int argc, char *argv[])
 
 	if (sigprocmask(SIG_SETMASK, &mask, NULL) < 0)
 		return EXIT_FAILURE;
+
+	papaw_hide_exe();
 
 #ifdef YODI_HAVE_KRISA
 	krisa_init(NULL);

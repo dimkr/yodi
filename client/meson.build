@@ -38,10 +38,18 @@ parson = cmake.subproject('parson', cmake_options: [])
 
 parson_dependency = parson.dependency('parson')
 
+papaw = subproject('papaw',
+                   default_options: [
+                   	'compression=lzma',
+                   ])
+
+papaw_dependency = papaw.get_variable('papaw_dependency')
+
 yodi_dependencies = [
 	libpaho_embed_mqtt3c_dependency,
 	boydemdb_dependency,
 	parson_dependency,
+	papaw_dependency,
 ]
 
 yodi_c_args = [
