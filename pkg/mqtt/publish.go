@@ -85,7 +85,7 @@ func (c *Client) publish(queuedMessage *QueuedMessage) error {
 		return errors.New("message is too big")
 	}
 
-	if err := c.writeFixedHeader(Publish, messageLength, queuedMessage.QoS); err != nil {
+	if err := c.writeFixedHeaderWithFlags(Publish, messageLength, queuedMessage.QoS, queuedMessage.Duplicate); err != nil {
 		return err
 	}
 

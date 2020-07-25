@@ -8,7 +8,7 @@ import (
 
 func (c *Client) handlePing() error {
 	log.WithFields(c.logFields).Debug("Responding to a ping")
-	return c.writeFixedHeader(PingResponse, 0, 0)
+	return c.writeFixedHeader(PingResponse, 0)
 }
 
 func (c *Client) readPing(hdr Header) error {

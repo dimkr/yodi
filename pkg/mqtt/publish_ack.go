@@ -7,7 +7,7 @@ type PublishAckFixedHeader struct {
 }
 
 func (c *Client) writePublishAck(messageID uint16) error {
-	if err := c.writeFixedHeader(PublishAck, 2, 0); err != nil {
+	if err := c.writeFixedHeader(PublishAck, 2); err != nil {
 		return err
 	}
 
@@ -20,8 +20,7 @@ func (c *Client) writePublishAck(messageID uint16) error {
 }
 
 func (c *Client) handlePublishAck(messageID uint16) error {
-	// TODO: do something here and re-senda message if not acked
-	return nil
+	return c.store.UnqueueMessageForSubscriber(c.ctx, c.clientID, messageID)
 }
 
 func (c *Client) readPublishAck() error {

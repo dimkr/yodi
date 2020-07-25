@@ -22,10 +22,12 @@ type Client struct {
 	startMessagesRoutine sync.Once
 	registered           bool
 	store                *Store
+	messageQueue         chan *QueuedMessage
 }
 
 const (
 	connectionTimeout = time.Hour
+	ackTimeout        = time.Second * 5
 
 	maxTopicLength    = 64
 	maxUsernameLength = 64
@@ -40,14 +42,17 @@ func NewClient(parent context.Context, conn net.Conn, store *Store) (*Client, er
 		return nil, err
 	}
 
+	messageQueue := make(chan *QueuedMessage, 1)
+
 	ctx, cancel := context.WithDeadline(parent, t)
 	return &Client{
-		logFields: log.Fields{},
-		reader:    conn,
-		writer:    conn,
-		ctx:       ctx,
-		cancel:    cancel,
-		store:     store,
+		logFields:    log.Fields{},
+		reader:       conn,
+		writer:       conn,
+		ctx:          ctx,
+		cancel:       cancel,
+		store:        store,
+		messageQueue: messageQueue,
 	}, nil
 }
 
@@ -65,21 +70,47 @@ func (c *Client) deliverMessages() {
 	log.WithFields(c.logFields).Info("Starting message delivery routine")
 
 	for {
-		queuedMessage, err := c.store.PopMessageForSubscriber(c.ctx, c.clientID)
-		if err != nil {
-			if c.ctx.Err() == nil {
-				log.WithError(err).Warn("Failed to pop a message")
-			}
-			break
-		}
+		select {
+		case <-c.ctx.Done():
+			log.WithFields(c.logFields).Info("Stopping message delivery routine")
+			return
 
-		if err := c.publish(queuedMessage); err != nil {
-			// if we failed to publish the message to the client, push it back to the queue
-			c.store.QueueMessageForSubscriber(c.ctx, c.clientID, queuedMessage)
+		case queuedMessage := <-c.messageQueue:
+			// we don't want to requeue the message while we're sending it
+			if queuedMessage.QoS != QoS0 {
+				queuedMessage.SendTime = time.Now()
+				queuedMessage.Duplicate = true
+				if err := c.store.UpdateQueuedMessageForSubscriber(c.ctx, c.clientID, queuedMessage); err != nil {
+					continue
+				}
+			}
+
+			c.publish(queuedMessage)
 		}
 	}
+}
 
-	log.WithFields(c.logFields).Info("Stopping message delivery routine")
+func (c *Client) queueMessages() {
+	messagesChannel := c.store.GetMessagesChannelForSubscriber(c.ctx, c.clientID)
+
+	for {
+		select {
+		case <-c.ctx.Done():
+			return
+
+		case queuedMessage := <-messagesChannel:
+			c.messageQueue <- queuedMessage
+
+		case <-time.After(ackTimeout):
+			now := time.Now()
+
+			c.store.ScanQueuedMessagesForSubscriber(c.ctx, c.clientID, func(queuedMessage *QueuedMessage) {
+				if !queuedMessage.Duplicate || now.After(queuedMessage.SendTime.Add(ackTimeout)) {
+					c.messageQueue <- queuedMessage
+				}
+			})
+		}
+	}
 }
 
 func (c *Client) readPacket() error {

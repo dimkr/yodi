@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
@@ -15,18 +16,21 @@ type Store struct {
 }
 
 type QueuedMessage struct {
-	ID      uint16 `json:"id"`
-	Topic   string `json:"topic"`
-	Message string `json:"message"`
-	QoS     QoS    `json:"qos"`
+	ID        uint16    `json:"id"`
+	Topic     string    `json:"topic"`
+	Message   string    `json:"message"`
+	QoS       QoS       `json:"qos"`
+	Duplicate bool      `json:"dup"`
+	SendTime  time.Time `json:"ts"`
 }
 
 const (
-	clientSet                 = "/clients"
-	messageQueue              = "/messages"
-	topicSubscribersSetFmt    = "/topic/%s/subscribers"
-	clientSubscriptionsSetFmt = "/client/%s/subscriptions"
-	clientMessageQueueFmt     = "/client/%s/message_queue"
+	clientSet                    = "/clients"
+	messageQueue                 = "/messages"
+	topicSubscribersSetFmt       = "/topic/%s/subscribers"
+	clientSubscriptionsSetFmt    = "/client/%s/subscriptions"
+	clientMessageQueueFmt        = "/client/%s/messages"
+	clientMessageNotificationFmt = "/client/%s/notify"
 )
 
 func (m *QueuedMessage) LogFields() log.Fields {
@@ -66,10 +70,6 @@ func (s *Store) AddClient(ctx context.Context, clientID string) error {
 }
 
 func (s *Store) RemoveClient(clientID string) error {
-	if _, err := s.redisClient.SRem(context.Background(), clientSet, clientID).Result(); err != nil {
-		return err
-	}
-
 	topics, err := s.redisClient.SMembers(context.Background(), fmt.Sprintf(clientSubscriptionsSetFmt, clientID)).Result()
 	if err != nil {
 		return err
@@ -84,6 +84,10 @@ func (s *Store) RemoveClient(clientID string) error {
 	}
 
 	if _, err := s.redisClient.Del(context.Background(), fmt.Sprintf(clientMessageQueueFmt, clientID)).Result(); err != nil {
+		return err
+	}
+
+	if _, err := s.redisClient.SRem(context.Background(), clientSet, clientID).Result(); err != nil {
 		return err
 	}
 
@@ -192,22 +196,90 @@ func (s *Store) QueueMessageForSubscribers(queuedMessage *QueuedMessage) error {
 	return nil
 }
 
-func (s *Store) QueueMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error {
-	log.WithFields(queuedMessage.LogFields()).WithField("client_id", clientID).Debug("Pushing message to client")
-
-	j, err := json.Marshal(queuedMessage)
-	if err != nil {
-		return err
-	}
-
-	_, err = s.redisClient.LPush(context.Background(), fmt.Sprintf(clientMessageQueueFmt, clientID), j).Result()
-	if err != nil {
-		log.WithFields(queuedMessage.LogFields()).WithField("client_id", clientID).WithError(err).Warn("failed to push message to client")
-	}
-
+func (s *Store) UnqueueMessageForSubscriber(ctx context.Context, clientID string, messageID uint16) error {
+	_, err := s.redisClient.HDel(ctx, fmt.Sprintf(clientMessageQueueFmt, clientID), fmt.Sprintf("%d", messageID)).Result()
 	return err
 }
 
-func (s *Store) PopMessageForSubscriber(ctx context.Context, clientID string) (*QueuedMessage, error) {
-	return s.popMessage(ctx, fmt.Sprintf(clientMessageQueueFmt, clientID))
+func (s *Store) QueueMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error {
+	j, err := json.Marshal(queuedMessage)
+	if err != nil {
+		log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to marshal a queued message")
+		return err
+	}
+
+	if queuedMessage.QoS != QoS0 {
+		_, err = s.redisClient.HSet(ctx, fmt.Sprintf(clientMessageQueueFmt, clientID), fmt.Sprintf("%d", queuedMessage.ID), j).Result()
+		if err != nil {
+			log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to add an unacked message")
+		}
+	}
+
+	_, err = s.redisClient.LPush(ctx, fmt.Sprintf(clientMessageNotificationFmt, clientID), j).Result()
+	return err
+}
+
+func (s *Store) UpdateQueuedMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error {
+	j, err := json.Marshal(queuedMessage)
+	if err != nil {
+		log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to marshal a queued message")
+		return err
+	}
+
+	_, err = s.redisClient.HSet(ctx, fmt.Sprintf(clientMessageQueueFmt, clientID), fmt.Sprintf("%d", queuedMessage.ID), j).Result()
+	return err
+}
+
+func (s *Store) notifyClient(ctx context.Context, clientID string, c chan<- *QueuedMessage) {
+	key := fmt.Sprintf(clientMessageNotificationFmt, clientID)
+
+	for {
+		results, err := s.redisClient.BLPop(ctx, 0, key).Result()
+		if err != nil {
+			break
+		}
+
+		for _, result := range results {
+			queuedMessage, err := decodeMessage([]byte(result))
+			if err != nil {
+				continue
+			}
+
+			c <- queuedMessage
+		}
+	}
+}
+
+func (s *Store) GetMessagesChannelForSubscriber(ctx context.Context, clientID string) <-chan *QueuedMessage {
+	c := make(chan *QueuedMessage, 1)
+	go s.notifyClient(ctx, clientID, c)
+	return c
+}
+
+func (s *Store) ScanQueuedMessagesForSubscriber(ctx context.Context, clientID string, f func(*QueuedMessage)) error {
+	var results []string
+	var cursor uint64
+	var err error
+
+	for {
+		results, cursor, err = s.redisClient.HScan(ctx, fmt.Sprintf(clientMessageQueueFmt, clientID), cursor, "", 1).Result()
+		if err != nil {
+			return err
+		}
+
+		for i := 1; i < len(results); i += 2 {
+			queuedMessage, err := decodeMessage([]byte(results[i]))
+			if err != nil {
+				continue
+			}
+
+			f(queuedMessage)
+		}
+
+		if cursor == 0 {
+			break
+		}
+	}
+
+	return nil
 }

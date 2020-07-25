@@ -39,6 +39,7 @@ func (c *Client) handleSubscribe(messageID uint16, topic string, qos QoS) error 
 	}
 
 	c.startMessagesRoutine.Do(func() {
+		go c.queueMessages()
 		go c.deliverMessages()
 	})
 

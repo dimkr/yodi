@@ -25,8 +25,9 @@ const (
 	PingRequest    MessageType = 0b1100
 	PingResponse   MessageType = 0b1101
 
-	qosMask  = 0b00000110
-	qosShift = 1
+	qosMask       = 0b00000110
+	qosShift      = 1
+	duplicateFlag = 0b00001000
 
 	ProtocolName    = "MQTT"
 	ProtocolVersion = 4
@@ -42,12 +43,16 @@ func (h *Header) GetQoS() (QoS, error) {
 	return qos, nil
 }
 
-func (c *Client) writeFixedHeader(messageType MessageType, messageLength int, qos QoS) error {
+func (c *Client) writeFixedHeaderWithFlags(messageType MessageType, messageLength int, qos QoS, duplicate bool) error {
 	if messageLength > 16383 {
 		return errors.New("Message is too long")
 	}
 
-	hdr := append([]byte{(uint8(messageType) << 4) | (uint8(qos) << qosShift)}, encodeRemainingLength(uint32(messageLength))...)
+	flags := (uint8(messageType) << 4) | (uint8(qos) << qosShift)
+	if duplicate {
+		flags |= duplicateFlag
+	}
+	hdr := append([]byte{flags}, encodeRemainingLength(uint32(messageLength))...)
 
 	n, err := c.writer.Write(hdr)
 	if err != nil {
@@ -58,4 +63,8 @@ func (c *Client) writeFixedHeader(messageType MessageType, messageLength int, qo
 	}
 
 	return nil
+}
+
+func (c *Client) writeFixedHeader(messageType MessageType, messageLength int) error {
+	return c.writeFixedHeaderWithFlags(messageType, messageLength, 0, false)
 }
