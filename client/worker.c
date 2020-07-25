@@ -283,7 +283,7 @@ int yodi_worker(int argc, char *argv[])
 				continue;
 
 			yodi_debug("Saving result %s", (char *)res);
-			boydemdb_set(db, YODI_TYPE_RESULT, res, strlen(res));
+			boydemdb_add(db, YODI_TYPE_RESULT, res, strlen(res));
 			free(res);
 		}
 

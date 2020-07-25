@@ -118,7 +118,7 @@ static void save_backtrace(boydemdb db, const char *name, const int fd)
 	} while (total < BACKTRACE_SIZE);
 
 	if (total > 0)
-		boydemdb_set(db, YODI_TYPE_BACKTRACE, buf, total);
+		boydemdb_add(db, YODI_TYPE_BACKTRACE, buf, total);
 #endif
 }
 

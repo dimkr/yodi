@@ -53,7 +53,7 @@ static void on_set(MessageData* md)
 	           (int)(message->payloadlen % INT_MAX),
 	           (char *)message->payload);
 
-	boydemdb_set(db,
+	boydemdb_add(db,
 	             YODI_TYPE_COMMAND,
 	             message->payload,
 	             message->payloadlen);
