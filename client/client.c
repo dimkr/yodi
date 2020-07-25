@@ -59,9 +59,10 @@ static void on_set(MessageData* md)
 	             message->payloadlen);
 }
 
-static int publish_results(MQTTClient *c,
-                           const char *topic,
-                           boydemdb db)
+static int publish_items(MQTTClient *c,
+                         const boydemdb_type type,
+                         const char *topic,
+                         boydemdb db)
 {
 	MQTTMessage msg = {.qos = QOS0};
 	boydemdb_id id;
@@ -70,13 +71,14 @@ static int publish_results(MQTTClient *c,
 	int ret;
 
 	while (1) {
-		buf = boydemdb_one(db, YODI_TYPE_RESULT, &id, &len);
+		buf = boydemdb_one(db, type, &id, &len);
 		if (!buf)
 			break;
 
-		yodi_debug("Publishing result: %.*s",
+		yodi_debug("Publishing %.*s to %s",
 		           (int)(len % INT_MAX),
-		           (char *)buf);
+		           (char *)buf,
+		           topic);
 
 		msg.payload = buf;
 		msg.payloadlen = len;
@@ -91,9 +93,30 @@ static int publish_results(MQTTClient *c,
 	return SUCCESS;
 }
 
+static int publish_results(MQTTClient *c,
+                           const char *topic,
+                           boydemdb db)
+{
+	return publish_items(c, YODI_TYPE_RESULT, topic, db);
+}
+
+#ifdef YODI_HAVE_KRISA
+
+static int report_crashes(MQTTClient *c,
+                          const char *topic,
+                          boydemdb db)
+{
+	return publish_items(c, YODI_TYPE_BACKTRACE, topic, db);
+}
+
+#endif
+
 int yodi_client(int argc, char *argv[])
 {
 	static char cmd_topic[256], result_topic[256];
+#ifdef YODI_HAVE_KRISA
+	static char backtrace_topic[256];
+#endif
 	MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
 	Network n;
 	MQTTClient c;
@@ -189,6 +212,9 @@ parsed:
 
 	snprintf(cmd_topic, sizeof(cmd_topic), "/%s/commands", id);
 	snprintf(result_topic, sizeof(result_topic), "/%s/results", id);
+#ifdef YODI_HAVE_KRISA
+	snprintf(backtrace_topic, sizeof(backtrace_topic), "/%s/crashes", id);
+#endif
 
 	yodi_debug("Subscribing to %s", cmd_topic);
 	if (MQTTSubscribe(&c, cmd_topic, 1, on_set) != SUCCESS)
@@ -214,6 +240,11 @@ parsed:
 
 		if (publish_results(&c, result_topic, db) != SUCCESS)
 			break;
+
+#ifdef YODI_HAVE_KRISA
+		if (report_crashes(&c, backtrace_topic, db) != SUCCESS)
+			break;
+#endif
 	}
 
 	yodi_debug("Unsubscribing from %s", cmd_topic);
