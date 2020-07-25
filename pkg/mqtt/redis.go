@@ -234,19 +234,17 @@ func (s *Store) notifyClient(ctx context.Context, clientID string, c chan<- *Que
 	key := fmt.Sprintf(clientMessageNotificationFmt, clientID)
 
 	for {
-		results, err := s.redisClient.BLPop(ctx, 0, key).Result()
+		result, err := s.redisClient.BLPop(ctx, 0, key).Result()
 		if err != nil {
 			break
 		}
 
-		for _, result := range results {
-			queuedMessage, err := decodeMessage([]byte(result))
-			if err != nil {
-				continue
-			}
-
-			c <- queuedMessage
+		queuedMessage, err := decodeMessage([]byte(result[1]))
+		if err != nil {
+			continue
 		}
+
+		c <- queuedMessage
 	}
 }
 
