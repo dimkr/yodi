@@ -79,6 +79,7 @@ enum {
 	YODI_TYPE_COMMAND,
 	YODI_TYPE_RESULT,
 	YODI_TYPE_BACKTRACE,
+	YODI_TYPE_LOG,
 };
 
 int yodi_client(int argc, char *argv[]);

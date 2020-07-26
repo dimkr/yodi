@@ -62,7 +62,8 @@ static void on_set(MessageData* md)
 static int publish_items(MQTTClient *c,
                          const boydemdb_type type,
                          const char *topic,
-                         boydemdb db)
+                         boydemdb db,
+                         int log)
 {
 	MQTTMessage msg = {.qos = QOS0};
 	boydemdb_id id;
@@ -75,10 +76,11 @@ static int publish_items(MQTTClient *c,
 		if (!buf)
 			break;
 
-		yodi_debug("Publishing %.*s to %s",
-		           (int)(len % INT_MAX),
-		           (char *)buf,
-		           topic);
+		if (log)
+			yodi_debug("Publishing %.*s to %s",
+			           (int)(len % INT_MAX),
+			           (char *)buf,
+			           topic);
 
 		msg.payload = buf;
 		msg.payloadlen = len;
@@ -97,8 +99,16 @@ static int publish_results(MQTTClient *c,
                            const char *topic,
                            boydemdb db)
 {
-	return publish_items(c, YODI_TYPE_RESULT, topic, db);
+	return publish_items(c, YODI_TYPE_RESULT, topic, db, 1);
 }
+
+static int publish_logs(MQTTClient *c,
+                        const char *topic,
+                        boydemdb db)
+{
+	return publish_items(c, YODI_TYPE_LOG, topic, db, 0);
+}
+
 
 #ifdef YODI_HAVE_KRISA
 
@@ -106,14 +116,14 @@ static int report_crashes(MQTTClient *c,
                           const char *topic,
                           boydemdb db)
 {
-	return publish_items(c, YODI_TYPE_BACKTRACE, topic, db);
+	return publish_items(c, YODI_TYPE_BACKTRACE, topic, db, 1);
 }
 
 #endif
 
 int yodi_client(int argc, char *argv[])
 {
-	static char cmd_topic[256], result_topic[256];
+	static char cmd_topic[256], result_topic[256], log_topic[256];
 #ifdef YODI_HAVE_KRISA
 	static char backtrace_topic[256];
 #endif
@@ -212,6 +222,7 @@ parsed:
 
 	snprintf(cmd_topic, sizeof(cmd_topic), "/%s/commands", id);
 	snprintf(result_topic, sizeof(result_topic), "/%s/results", id);
+	snprintf(log_topic, sizeof(log_topic), "/%s/log", id);
 #ifdef YODI_HAVE_KRISA
 	snprintf(backtrace_topic, sizeof(backtrace_topic), "/%s/crashes", id);
 #endif
@@ -239,6 +250,9 @@ parsed:
 		}
 
 		if (publish_results(&c, result_topic, db) != SUCCESS)
+			break;
+
+		if (publish_logs(&c, log_topic, db) != SUCCESS)
 			break;
 
 #ifdef YODI_HAVE_KRISA

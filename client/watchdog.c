@@ -35,6 +35,7 @@
 #include <papaw.h>
 #include <yodi.h>
 
+#define SIGLOG SIGRTMAX
 #define SIGRESTART SIGRTMIN
 #define KILLFD 127
 #define BACKTRACE_SIZE 4096
@@ -48,11 +49,15 @@ struct yodi_service {
 
 static pid_t start_service(struct yodi_service *svcs,
                            const unsigned int i,
+                           const unsigned int n,
                            const int argc,
-                           char **argv)
+                           char **argv,
+                           const int logr,
+                           const int logw)
 {
 	struct yodi_service *svc = &svcs[i];
 	int s[2], killfd;
+	unsigned int j;
 
 	yodi_debug("Starting %s", svc->name);
 
@@ -60,7 +65,7 @@ static pid_t start_service(struct yodi_service *svcs,
 		return -1;
 
 	if ((yodi_setsig(s[1], SIGRESTART + i) < 0) ||
-	    (fcntl(s[0], F_SETFD, FD_CLOEXEC) < 0)){
+	    (fcntl(s[0], F_SETFD, FD_CLOEXEC) < 0)) {
 		close(s[1]);
 		close(s[0]);
 		return -1;
@@ -74,10 +79,20 @@ static pid_t start_service(struct yodi_service *svcs,
 		killfd = dup2(s[0], KILLFD);
 		close(s[0]);
 
+		close(logr);
+
+		for (j = 0; j < n; ++j) {
+			if ((j != i) && (svcs[j].killfd != -1))
+				close(svcs[j].killfd);
+		}
+
 		if ((killfd != KILLFD) ||
 		    (yodi_setsig(killfd, SIGKILL) < 0) ||
-		    (fcntl(killfd, F_SETFD, FD_CLOEXEC) < 0))
+		    (fcntl(killfd, F_SETFD, FD_CLOEXEC) < 0) ||
+		    (dup2(logw, STDERR_FILENO) != STDERR_FILENO))
 			exit(EXIT_FAILURE);
+
+		close(logw);
 
 		prctl(PR_SET_NAME, svc->name);
 
@@ -176,12 +191,30 @@ static int wait_for_signal(struct yodi_service *svc,
 			waitpid(si.si_pid, NULL, WNOHANG);
 		else if ((si.si_signo == SIGINT) ||
 		         (si.si_signo == SIGTERM) ||
+		         (si.si_signo == SIGLOG) ||
 		         ((si.si_signo >= SIGRESTART) &&
 		          (si.si_signo < SIGRESTART + n)))
 			return si.si_signo;
 	}
 
 	return si.si_signo;
+}
+
+static void save_log(const int fd, boydemdb db)
+{
+	static char buf[512];
+	ssize_t len;
+
+	while (1) {
+		len = recvfrom(fd, buf, sizeof(buf), MSG_DONTWAIT, NULL, NULL);
+		if (len <= 0)
+			break;
+
+		if (len > 1)
+			boydemdb_add(db, YODI_TYPE_LOG, buf, (size_t)len - 1);
+
+		write(STDERR_FILENO, buf, (size_t)len);
+	}
 }
 
 #ifdef YODI_HAVE_KRISA
@@ -204,8 +237,10 @@ int main(int argc, char *argv[])
 	struct timespec ts = {.tv_sec = 1};
 	sigset_t mask, chld;
 	yodi_db_autoclose boydemdb db = BOYDEMDB_INIT;
+	int fds[2];
 	unsigned int i, n = sizeof(svcs) / sizeof(svcs[0]), id;
 	int sig, ret = EXIT_FAILURE;
+	yodi_autoclose int logr = -1, logw = -1;
 #ifdef YODI_HAVE_KRISA
 	yodi_autoclose int killfd = -1;
 #endif
@@ -214,7 +249,7 @@ int main(int argc, char *argv[])
 	    (sigemptyset(&mask) < 0) ||
 	    (sigaddset(&mask, SIGTERM) < 0) ||
 	    (sigaddset(&mask, SIGINT) < 0) ||
-	    (sigaddset(&mask, SIGRESTART) < 0) ||
+	    (sigaddset(&mask, SIGLOG) < 0) ||
 	    (sigemptyset(&chld) < 0) ||
 	    (sigaddset(&chld, SIGCHLD) < 0))
 		return EXIT_FAILURE;
@@ -245,22 +280,35 @@ int main(int argc, char *argv[])
 		setlinebuf(stderr);
 	}
 
-#ifdef YODI_HAVE_KRISA
 	db = boydemdb_open(YODI_DB_PATH);
 	if (!db)
 		return EXIT_FAILURE;
-#endif
+
+	if (socketpair(AF_UNIX, SOCK_DGRAM, 0, fds) < 0)
+		return EXIT_FAILURE;
+	logr = fds[0];
+	logw = fds[1];
+
+	if ((yodi_setsig(logr, SIGLOG) < 0) ||
+	    (fcntl(logr, F_SETFD, FD_CLOEXEC) < 0) ||
+	    (fcntl(logw, F_SETFD, FD_CLOEXEC) < 0))
+		return EXIT_FAILURE;
 
 	for (i = 0; i < n; ++i)
 		svcs[i].pid = -1;
 
 	for (i = 0; i < n; ++i) {
-		if (start_service(svcs, i, argc, argv) < 0)
+		if (start_service(svcs, i, n, argc, argv, logr, logw) < 0)
 			goto reap;
 	}
 
 	while (1) {
 		sig = wait_for_signal(svcs, n, &mask);
+
+		if (sig == SIGLOG) {
+			save_log(logr, db);
+			continue;
+		}
 
 		if ((sig == SIGINT) || (sig == SIGTERM)) {
 			yodi_debug("Received termination signal %d", sig);
@@ -273,7 +321,7 @@ int main(int argc, char *argv[])
 		reap_service(&svcs[id], &chld, db);
 		unqueue_signal(sig);
 
-		if (start_service(svcs, id, argc, argv) < 0)
+		if (start_service(svcs, id, n, argc, argv, logr, logw) < 0)
 			break;
 
 		nanosleep(&ts, NULL);

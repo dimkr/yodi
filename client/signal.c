@@ -33,4 +33,3 @@ int yodi_setsig(const int fd, const int sig)
 
 	return 0;
 }
-
