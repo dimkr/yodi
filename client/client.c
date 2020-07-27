@@ -62,10 +62,11 @@ static void on_set(MessageData* md)
 static int publish_items(MQTTClient *c,
                          const boydemdb_type type,
                          const char *topic,
+                         const enum QoS qos,
                          boydemdb db,
                          int log)
 {
-	MQTTMessage msg = {.qos = QOS0};
+	MQTTMessage msg = {.qos = qos};
 	boydemdb_id id;
 	size_t len;
 	yodi_autofree void *buf = NULL;
@@ -99,16 +100,15 @@ static int publish_results(MQTTClient *c,
                            const char *topic,
                            boydemdb db)
 {
-	return publish_items(c, YODI_TYPE_RESULT, topic, db, 1);
+	return publish_items(c, YODI_TYPE_RESULT, topic, QOS1, db, 1);
 }
 
 static int publish_logs(MQTTClient *c,
                         const char *topic,
                         boydemdb db)
 {
-	return publish_items(c, YODI_TYPE_LOG, topic, db, 0);
+	return publish_items(c, YODI_TYPE_LOG, topic, QOS0, db, 0);
 }
-
 
 #ifdef YODI_HAVE_KRISA
 
@@ -116,7 +116,7 @@ static int report_crashes(MQTTClient *c,
                           const char *topic,
                           boydemdb db)
 {
-	return publish_items(c, YODI_TYPE_BACKTRACE, topic, db, 1);
+	return publish_items(c, YODI_TYPE_BACKTRACE, topic, QOS1, db, 1);
 }
 
 #endif
@@ -228,7 +228,7 @@ parsed:
 #endif
 
 	yodi_debug("Subscribing to %s", cmd_topic);
-	if (MQTTSubscribe(&c, cmd_topic, 1, on_set) != SUCCESS)
+	if (MQTTSubscribe(&c, cmd_topic, QOS1, on_set) != SUCCESS)
 		goto cleanup;
 	yodi_debug("Subscribed to %s", cmd_topic);
 
