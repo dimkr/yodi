@@ -143,6 +143,14 @@ func (c *Client) readPacket() error {
 	hdr := Header{Flags: flags[0], MessageLength: length}
 	messageType := MessageType(hdr.Flags >> 4)
 
+	if !c.registered {
+		if messageType != Connect {
+			return fmt.Errorf("must connect first")
+		}
+
+		return c.readConnect()
+	}
+
 	switch messageType {
 	case Publish:
 		return c.readPublish(hdr)
@@ -155,9 +163,6 @@ func (c *Client) readPacket() error {
 
 	case PingResponse:
 		return c.readPingResponse(hdr)
-
-	case Connect:
-		return c.readConnect()
 
 	case Subscribe:
 		return c.readSubscribe()
