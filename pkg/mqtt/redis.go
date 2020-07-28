@@ -19,6 +19,7 @@ package mqtt
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -213,7 +214,15 @@ func (s *Store) QueueMessageForSubscribers(queuedMessage *QueuedMessage) error {
 }
 
 func (s *Store) UnqueueMessageForSubscriber(ctx context.Context, clientID string, messageID uint16) error {
-	_, err := s.redisClient.HDel(ctx, fmt.Sprintf(clientMessageQueueFmt, clientID), fmt.Sprintf("%d", messageID)).Result()
+	n, err := s.redisClient.HDel(ctx, fmt.Sprintf(clientMessageQueueFmt, clientID), fmt.Sprintf("%d", messageID)).Result()
+	if err != nil {
+		return err
+	}
+
+	if n == 0 {
+		return errors.New("Message is not queued")
+	}
+
 	return err
 }
 
