@@ -17,6 +17,7 @@
 package main
 
 import (
+	"context"
 	"net"
 	"os"
 	"os/signal"
@@ -57,7 +58,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	broker, err := mqtt.NewBroker()
+	redisClient, err := mqtt.ConnectToRedis(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	broker, err := mqtt.NewBroker(mqtt.NewRedisStore(redisClient))
 	if err != nil {
 		log.Fatal(err)
 	}

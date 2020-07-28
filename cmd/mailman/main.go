@@ -41,7 +41,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		store := mqtt.NewStore(redisClient)
+		store := mqtt.NewRedisStore(redisClient)
 
 		for {
 			queuedMessage, err := store.PopQueuedMessage(ctx)

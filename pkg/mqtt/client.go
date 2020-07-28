@@ -37,7 +37,7 @@ type Client struct {
 	cancel               context.CancelFunc
 	startMessagesRoutine sync.Once
 	registered           bool
-	store                *Store
+	store                Store
 	messageQueue         chan *QueuedMessage
 	lastPingTime         time.Time
 }
@@ -53,7 +53,7 @@ const (
 
 var ErrDisconnected = errors.New("Client has disconnected")
 
-func NewClient(parent context.Context, conn net.Conn, store *Store) (*Client, error) {
+func NewClient(parent context.Context, conn net.Conn, store Store) (*Client, error) {
 	t := time.Now().Add(connectionTimeout)
 	if err := conn.SetDeadline(t); err != nil {
 		return nil, err

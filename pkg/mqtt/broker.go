@@ -22,16 +22,11 @@ import (
 )
 
 type Broker struct {
-	Store *Store
+	Store Store
 }
 
-func NewBroker() (*Broker, error) {
-	redisClient, err := ConnectToRedis(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	return &Broker{Store: NewStore(redisClient)}, nil
+func NewBroker(store Store) (*Broker, error) {
+	return &Broker{Store: store}, nil
 }
 
 func (b *Broker) NewClient(conn net.Conn) (*Client, error) {

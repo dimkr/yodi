@@ -22,23 +22,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 )
 
-type Store struct {
+type RedisStore struct {
 	redisClient *redis.Client
-}
-
-type QueuedMessage struct {
-	ID        uint16    `json:"id"`
-	Topic     string    `json:"topic"`
-	Message   string    `json:"message"`
-	QoS       QoS       `json:"qos"`
-	Duplicate bool      `json:"dup"`
-	SendTime  time.Time `json:"ts"`
 }
 
 const (
@@ -49,10 +39,6 @@ const (
 	clientMessageQueueFmt        = "/client/%s/messages"
 	clientMessageNotificationFmt = "/client/%s/notify"
 )
-
-func (m *QueuedMessage) LogFields() log.Fields {
-	return log.Fields{"id": m.ID, "topic": m.Topic}
-}
 
 func ConnectToRedis(ctx context.Context) (*redis.Client, error) {
 	opts, err := redis.ParseURL(os.Getenv("REDIS_URL"))
@@ -70,11 +56,11 @@ func ConnectToRedis(ctx context.Context) (*redis.Client, error) {
 	return client, nil
 }
 
-func NewStore(redisClient *redis.Client) *Store {
-	return &Store{redisClient: redisClient}
+func NewRedisStore(redisClient *redis.Client) Store {
+	return &RedisStore{redisClient: redisClient}
 }
 
-func (s *Store) AddClient(ctx context.Context, clientID string) error {
+func (s *RedisStore) AddClient(ctx context.Context, clientID string) error {
 	n, err := s.redisClient.SAdd(ctx, clientSet, clientID).Result()
 	if err != nil {
 		return err
@@ -86,7 +72,7 @@ func (s *Store) AddClient(ctx context.Context, clientID string) error {
 	return nil
 }
 
-func (s *Store) RemoveClient(clientID string) error {
+func (s *RedisStore) RemoveClient(clientID string) error {
 	topics, err := s.redisClient.SMembers(context.Background(), fmt.Sprintf(clientSubscriptionsSetFmt, clientID)).Result()
 	if err != nil {
 		return err
@@ -111,7 +97,7 @@ func (s *Store) RemoveClient(clientID string) error {
 	return nil
 }
 
-func (s *Store) Subscribe(ctx context.Context, clientID, topic string) error {
+func (s *RedisStore) Subscribe(ctx context.Context, clientID, topic string) error {
 	subscriptions := fmt.Sprintf(clientSubscriptionsSetFmt, clientID)
 
 	n, err := s.redisClient.SAdd(ctx, subscriptions, topic).Result()
@@ -131,7 +117,7 @@ func (s *Store) Subscribe(ctx context.Context, clientID, topic string) error {
 	return err
 }
 
-func (s *Store) Unsubscribe(ctx context.Context, clientID, topic string) error {
+func (s *RedisStore) Unsubscribe(ctx context.Context, clientID, topic string) error {
 	n, err := s.redisClient.SRem(ctx, fmt.Sprintf(topicSubscribersSetFmt, topic), clientID).Result()
 	if err != nil {
 		return err
@@ -156,7 +142,7 @@ func decodeMessage(raw []byte) (*QueuedMessage, error) {
 	return &msg, nil
 }
 
-func (s *Store) popMessage(ctx context.Context, queue string) (*QueuedMessage, error) {
+func (s *RedisStore) popMessage(ctx context.Context, queue string) (*QueuedMessage, error) {
 	result, err := s.redisClient.BLPop(ctx, 0, queue).Result()
 	if err != nil {
 		return nil, err
@@ -165,11 +151,11 @@ func (s *Store) popMessage(ctx context.Context, queue string) (*QueuedMessage, e
 	return decodeMessage([]byte(result[1]))
 }
 
-func (s *Store) PopQueuedMessage(ctx context.Context) (*QueuedMessage, error) {
+func (s *RedisStore) PopQueuedMessage(ctx context.Context) (*QueuedMessage, error) {
 	return s.popMessage(ctx, messageQueue)
 }
 
-func (s *Store) QueueMessage(topic string, msg []byte, messageID uint16, qos QoS) error {
+func (s *RedisStore) QueueMessage(topic string, msg []byte, messageID uint16, qos QoS) error {
 	queuedMessage := QueuedMessage{ID: messageID, Topic: topic, Message: string(msg), QoS: qos}
 
 	log.WithFields(queuedMessage.LogFields()).Info("Queueing a message")
@@ -188,7 +174,7 @@ func (s *Store) QueueMessage(topic string, msg []byte, messageID uint16, qos QoS
 	return err
 }
 
-func (s *Store) QueueMessageForSubscribers(queuedMessage *QueuedMessage) error {
+func (s *RedisStore) QueueMessageForSubscribers(queuedMessage *QueuedMessage) error {
 	var cursor uint64
 	var clientIDs []string
 	var err error
@@ -213,7 +199,7 @@ func (s *Store) QueueMessageForSubscribers(queuedMessage *QueuedMessage) error {
 	return nil
 }
 
-func (s *Store) UnqueueMessageForSubscriber(ctx context.Context, clientID string, messageID uint16) error {
+func (s *RedisStore) UnqueueMessageForSubscriber(ctx context.Context, clientID string, messageID uint16) error {
 	n, err := s.redisClient.HDel(ctx, fmt.Sprintf(clientMessageQueueFmt, clientID), fmt.Sprintf("%d", messageID)).Result()
 	if err != nil {
 		return err
@@ -226,7 +212,7 @@ func (s *Store) UnqueueMessageForSubscriber(ctx context.Context, clientID string
 	return err
 }
 
-func (s *Store) QueueMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error {
+func (s *RedisStore) QueueMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error {
 	j, err := json.Marshal(queuedMessage)
 	if err != nil {
 		log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to marshal a queued message")
@@ -244,7 +230,7 @@ func (s *Store) QueueMessageForSubscriber(ctx context.Context, clientID string, 
 	return err
 }
 
-func (s *Store) UpdateQueuedMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error {
+func (s *RedisStore) UpdateQueuedMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error {
 	j, err := json.Marshal(queuedMessage)
 	if err != nil {
 		log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to marshal a queued message")
@@ -255,7 +241,7 @@ func (s *Store) UpdateQueuedMessageForSubscriber(ctx context.Context, clientID s
 	return err
 }
 
-func (s *Store) notifyClient(ctx context.Context, clientID string, c chan<- *QueuedMessage) {
+func (s *RedisStore) notifyClient(ctx context.Context, clientID string, c chan<- *QueuedMessage) {
 	key := fmt.Sprintf(clientMessageNotificationFmt, clientID)
 
 	for {
@@ -273,13 +259,13 @@ func (s *Store) notifyClient(ctx context.Context, clientID string, c chan<- *Que
 	}
 }
 
-func (s *Store) GetMessagesChannelForSubscriber(ctx context.Context, clientID string) <-chan *QueuedMessage {
+func (s *RedisStore) GetMessagesChannelForSubscriber(ctx context.Context, clientID string) <-chan *QueuedMessage {
 	c := make(chan *QueuedMessage, 1)
 	go s.notifyClient(ctx, clientID, c)
 	return c
 }
 
-func (s *Store) ScanQueuedMessagesForSubscriber(ctx context.Context, clientID string, f func(*QueuedMessage)) error {
+func (s *RedisStore) ScanQueuedMessagesForSubscriber(ctx context.Context, clientID string, f func(*QueuedMessage)) error {
 	var results []string
 	var cursor uint64
 	var err error
