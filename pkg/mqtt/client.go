@@ -39,6 +39,7 @@ type Client struct {
 	registered           bool
 	store                *Store
 	messageQueue         chan *QueuedMessage
+	lastPingTime         time.Time
 }
 
 const (

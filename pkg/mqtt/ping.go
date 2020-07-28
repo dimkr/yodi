@@ -18,9 +18,12 @@ package mqtt
 
 import (
 	"errors"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
+
+const minPingInterval = time.Second * 20
 
 func (c *Client) handlePing() error {
 	log.WithFields(c.logFields).Debug("Responding to a ping")
@@ -28,6 +31,10 @@ func (c *Client) handlePing() error {
 }
 
 func (c *Client) readPing(hdr Header) error {
+	if time.Now().Sub(c.lastPingTime) < minPingInterval {
+		return errors.New("client pings too often")
+	}
+
 	if hdr.MessageLength != 0 {
 		return errors.New("ping requests must have no payload")
 	}
