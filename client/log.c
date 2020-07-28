@@ -20,8 +20,10 @@
 #include <strings.h>
 #include <stdlib.h>
 #include <sys/prctl.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include <yodi.h>
+#include <yodi/log.h>
 
 const char *yodi_now(void)
 {

@@ -16,22 +16,15 @@
  * limitations under the License.
  */
 
-#include <sys/types.h>
-#include <unistd.h>
-#include <fcntl.h>
+#ifndef _YODI_H_INCLUDED
+#	define _YODI_H_INCLUDED
 
-#include <yodi/signal.h>
+#	include <yodi/auto.h>
+#	include <yodi/log.h>
+#	include <yodi/signal.h>
+#	include <yodi/db.h>
 
-int yodi_setsig(const int fd, const int sig)
-{
-	int fl;
+int yodi_client(int argc, char *argv[]);
+int yodi_worker(int argc, char *argv[]);
 
-	fl = fcntl(fd, F_GETFL);
-	if ((fl < 0) ||
-	    (fcntl(fd, F_SETFL, fl | O_ASYNC) < 0) ||
-	    (fcntl(fd, F_SETSIG, sig) < 0) ||
-	    (fcntl(fd, F_SETOWN, getpid()) < 0))
-		return -1;
-
-	return 0;
-}
+#endif

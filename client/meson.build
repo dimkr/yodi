@@ -83,7 +83,10 @@ yodi_srcs = [
 	'worker.c',
 ]
 
+yodi_includes = include_directories('include')
+
 yodi = executable('yodi',
                   yodi_srcs,
                   c_args: yodi_c_args,
-                  dependencies: yodi_dependencies)
+                  dependencies: yodi_dependencies,
+                  include_directories: yodi_includes)

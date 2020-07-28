@@ -16,22 +16,20 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <fcntl.h>
 
-#include <yodi/signal.h>
+#define YODI_LOG_PATH "/tmp/yodi.log"
 
-int yodi_setsig(const int fd, const int sig)
-{
-	int fl;
+const char *yodi_now(void);
+const char *yodi_progname(void);
 
-	fl = fcntl(fd, F_GETFL);
-	if ((fl < 0) ||
-	    (fcntl(fd, F_SETFL, fl | O_ASYNC) < 0) ||
-	    (fcntl(fd, F_SETSIG, sig) < 0) ||
-	    (fcntl(fd, F_SETOWN, getpid()) < 0))
-		return -1;
+#define yodi_warn(fmt, ...) fprintf(stderr, "[ %s | %s/%ld ] "fmt"\n", yodi_now(), yodi_progname(), (long)getpid(), __VA_ARGS__)
+#define yodi_error yodi_warn
 
-	return 0;
-}
+#ifdef YODI_DEBUG
+#   define yodi_debug yodi_warn
+#else
+#   define yodi_debug(fmt, ...) do {} while (0)
+#endif

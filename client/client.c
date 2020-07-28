@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -23,6 +24,7 @@
 
 #include <MQTTClient.h>
 #include <boydemdb.h>
+
 #include <yodi.h>
 
 #define MQTT_BUFSIZ 1024 * 1024
