@@ -149,7 +149,7 @@ func (c *Client) readPacket() error {
 			return fmt.Errorf("must connect first")
 		}
 
-		return c.readConnect()
+		return c.readConnect(hdr)
 	}
 
 	switch messageType {

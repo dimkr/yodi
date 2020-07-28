@@ -35,11 +35,16 @@ type ConnectFixedHeader struct {
 }
 
 const (
+	ConnectionAccepted ReturnCode = iota
+	ConnectionRefusedUnacceptableProtocolVersion
+	ConnectionRefusedIdentifierRejected
+	ConnectionRefusedServerUnavailable
+	ConnectionRefusedBadUsernameOrPassword
+	ConnectionRefusedNotAuthorized
+
 	UsernameSet           ConnectFlags = 0b10000000
 	PasswordSet           ConnectFlags = 0b01000000
 	mandatoryConnectFlags              = UsernameSet | PasswordSet
-
-	ConnectionAccepted ReturnCode = 0
 )
 
 func (c *Client) authenticateConnect(clientID, username, password string) error {
@@ -50,11 +55,13 @@ func (c *Client) authenticateConnect(clientID, username, password string) error 
 func (c *Client) handleConnect(clientID, username, password string) error {
 	if err := c.authenticateConnect(clientID, username, password); err != nil {
 		log.WithFields(c.logFields).Info("client has connected")
+		c.writeConnectAck(ConnectionRefusedIdentifierRejected)
 		return err
 	}
 
 	if err := c.store.AddClient(c.ctx, clientID); err != nil {
 		log.WithError(err).Warn("failed to add a client")
+		c.writeConnectAck(ConnectionRefusedServerUnavailable)
 		return err
 	}
 	c.registered = true
@@ -71,7 +78,7 @@ func (c *Client) handleConnect(clientID, username, password string) error {
 	return nil
 }
 
-func (c *Client) readConnect() error {
+func (c *Client) readConnect(hdr Header) error {
 	var connectFixedHeader ConnectFixedHeader
 	if err := binary.Read(c.reader, binary.BigEndian, &connectFixedHeader); err != nil {
 		return err
@@ -83,18 +90,24 @@ func (c *Client) readConnect() error {
 	}
 
 	if connectFixedHeader.ProtocolVersion != ProtocolVersion {
+		c.writeConnectAck(ConnectionRefusedUnacceptableProtocolVersion)
 		return errors.New("Bad protocol version")
 	}
 
 	if connectFixedHeader.ConnectFlags&mandatoryConnectFlags != mandatoryConnectFlags {
+		c.writeConnectAck(ConnectionRefusedNotAuthorized)
 		return errors.New("Required connect flags are not set")
 	}
 
-	// TODO: validate hdr.MessageLength
+	remainingLength := hdr.MessageLength
+	if remainingLength <= 10+2 {
+		return errors.New("Invalid Connect request")
+	}
+	remainingLength -= 10 + 2
 
 	stringReader := StringReader{c.reader}
 
-	buf := make([]byte, maxTopicLength)
+	buf := make([]byte, remainingLength)
 	n, err := stringReader.Read(buf)
 	if err != nil {
 		return err
@@ -104,7 +117,13 @@ func (c *Client) readConnect() error {
 	}
 	clientID := string(buf[:n])
 
-	buf = make([]byte, maxUsernameLength)
+	remainingLength -= uint32(n)
+	if remainingLength <= 2 {
+		return errors.New("Invalid Connect request")
+	}
+	remainingLength -= 2
+
+	buf = make([]byte, remainingLength)
 	n, err = stringReader.Read(buf)
 	if err != nil {
 		return err
@@ -114,7 +133,13 @@ func (c *Client) readConnect() error {
 	}
 	username := string(buf[:n])
 
-	buf = make([]byte, maxPasswordLength)
+	remainingLength -= uint32(n)
+	if remainingLength <= 2 {
+		return errors.New("Invalid Connect request")
+	}
+	remainingLength -= 2
+
+	buf = make([]byte, remainingLength)
 	n, err = stringReader.Read(buf)
 	if err != nil {
 		return err
@@ -123,6 +148,10 @@ func (c *Client) readConnect() error {
 		return errors.New("empty password")
 	}
 	password := string(buf[:n])
+
+	if remainingLength != uint32(n) {
+		return errors.New("Invalid Connect request")
+	}
 
 	return c.handleConnect(clientID, username, password)
 }
