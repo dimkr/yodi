@@ -29,6 +29,7 @@ import (
 
 type RedisStore struct {
 	redisClient *redis.Client
+	ctx         context.Context
 }
 
 const (
@@ -56,8 +57,8 @@ func ConnectToRedis(ctx context.Context) (*redis.Client, error) {
 	return client, nil
 }
 
-func NewRedisStore(redisClient *redis.Client) Store {
-	return &RedisStore{redisClient: redisClient}
+func NewRedisStore(ctx context.Context, redisClient *redis.Client) (Store, error) {
+	return &RedisStore{ctx: ctx, redisClient: redisClient}, nil
 }
 
 func (s *RedisStore) AddClient(ctx context.Context, clientID string) error {
@@ -73,24 +74,24 @@ func (s *RedisStore) AddClient(ctx context.Context, clientID string) error {
 }
 
 func (s *RedisStore) RemoveClient(clientID string) error {
-	topics, err := s.redisClient.SMembers(context.Background(), fmt.Sprintf(clientSubscriptionsSetFmt, clientID)).Result()
+	topics, err := s.redisClient.SMembers(s.ctx, fmt.Sprintf(clientSubscriptionsSetFmt, clientID)).Result()
 	if err != nil {
 		return err
 	}
 
 	for _, topic := range topics {
-		s.redisClient.SRem(context.Background(), fmt.Sprintf(topicSubscribersSetFmt, topic), clientID)
+		s.redisClient.SRem(s.ctx, fmt.Sprintf(topicSubscribersSetFmt, topic), clientID)
 	}
 
-	if _, err := s.redisClient.Del(context.Background(), fmt.Sprintf(clientSubscriptionsSetFmt, clientID)).Result(); err != nil {
+	if _, err := s.redisClient.Del(s.ctx, fmt.Sprintf(clientSubscriptionsSetFmt, clientID)).Result(); err != nil {
 		return err
 	}
 
-	if _, err := s.redisClient.Del(context.Background(), fmt.Sprintf(clientMessageQueueFmt, clientID)).Result(); err != nil {
+	if _, err := s.redisClient.Del(s.ctx, fmt.Sprintf(clientMessageQueueFmt, clientID)).Result(); err != nil {
 		return err
 	}
 
-	if _, err := s.redisClient.SRem(context.Background(), clientSet, clientID).Result(); err != nil {
+	if _, err := s.redisClient.SRem(s.ctx, clientSet, clientID).Result(); err != nil {
 		return err
 	}
 
@@ -166,7 +167,7 @@ func (s *RedisStore) QueueMessage(topic string, msg []byte, messageID uint16, qo
 		return err
 	}
 
-	_, err = s.redisClient.LPush(context.Background(), messageQueue, j).Result()
+	_, err = s.redisClient.LPush(s.ctx, messageQueue, j).Result()
 	if err != nil {
 		log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to queue a message")
 	}
@@ -180,13 +181,13 @@ func (s *RedisStore) QueueMessageForSubscribers(queuedMessage *QueuedMessage) er
 	var err error
 
 	for {
-		clientIDs, cursor, err = s.redisClient.SScan(context.Background(), fmt.Sprintf(topicSubscribersSetFmt, queuedMessage.Topic), cursor, "*", 1).Result()
+		clientIDs, cursor, err = s.redisClient.SScan(s.ctx, fmt.Sprintf(topicSubscribersSetFmt, queuedMessage.Topic), cursor, "*", 1).Result()
 		if err != nil {
 			return err
 		}
 
 		for _, clientID := range clientIDs {
-			if err := s.QueueMessageForSubscriber(context.Background(), clientID, queuedMessage); err != nil {
+			if err := s.QueueMessageForSubscriber(s.ctx, clientID, queuedMessage); err != nil {
 				continue
 			}
 		}

@@ -22,13 +22,14 @@ import (
 )
 
 type Broker struct {
-	Store Store
+	store Store
+	ctx   context.Context
 }
 
-func NewBroker(store Store) (*Broker, error) {
-	return &Broker{Store: store}, nil
+func NewBroker(ctx context.Context, store Store) (*Broker, error) {
+	return &Broker{store: store, ctx: ctx}, nil
 }
 
 func (b *Broker) NewClient(conn net.Conn) (*Client, error) {
-	return NewClient(context.Background(), conn, b.Store)
+	return NewClient(b.ctx, conn, b.store)
 }

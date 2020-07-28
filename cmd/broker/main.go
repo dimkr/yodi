@@ -63,7 +63,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	broker, err := mqtt.NewBroker(mqtt.NewRedisStore(redisClient))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	store, err := mqtt.NewRedisStore(ctx, redisClient)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	broker, err := mqtt.NewBroker(ctx, store)
 	if err != nil {
 		log.Fatal(err)
 	}
