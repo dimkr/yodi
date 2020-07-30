@@ -80,12 +80,6 @@ static int publish_items(MQTTClient *c,
 		if (!buf)
 			break;
 
-		if (log)
-			yodi_debug("Publishing %.*s to %s",
-			           (int)(len % INT_MAX),
-			           (char *)buf,
-			           topic);
-
 		if (compressed) {
 			msg.payload = yodi_decompress(buf, len, &msg.payloadlen);
 			if (!msg.payload)
@@ -95,6 +89,12 @@ static int publish_items(MQTTClient *c,
 			msg.payload = buf;
 			msg.payloadlen = len;
 		}
+
+		if (log)
+			yodi_debug("Publishing %.*s to %s",
+			           (int)(msg.payloadlen % INT_MAX),
+			           (char *)msg.payload,
+			           topic);
 
 		ret = MQTTPublish(c, topic, &msg);
 		if (ret != SUCCESS)
