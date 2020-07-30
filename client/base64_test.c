@@ -16,18 +16,36 @@
  * limitations under the License.
  */
 
-#ifndef _YODI_H_INCLUDED
-#	define _YODI_H_INCLUDED
+#include <string.h>
+#include <assert.h>
+#include <stdlib.h>
 
-#	include <yodi/auto.h>
-#	include <yodi/log.h>
-#	include <yodi/signal.h>
-#	include <yodi/db.h>
-#	include <yodi/compress.h>
-#	include <yodi/base64.h>
-#	include <yodi/command.h>
+#include <yodi.h>
 
-int yodi_client(int argc, char *argv[]);
-int yodi_worker(int argc, char *argv[]);
+int main(int argc, char *argv[])
+{
+	void *p;
+	char *s;
+	size_t out = 0;
 
-#endif
+	s = yodi_base64_encode("", 0);
+	assert(s);
+	assert(s[0] == '\0');
+	free(s);
+
+	p = yodi_base64_encode("\x01\x02\x03\x04", 4);
+	assert(p);
+	assert(strcmp(p, "AQIDBA==") == 0);
+	free(p);
+
+	assert(!yodi_base64_decode("AQIDBA\x01", 7, &out));
+	assert(!yodi_base64_decode("", 0, &out));
+
+	s = yodi_base64_decode("AQIDBA==", 8, &out);
+	assert(s);
+	assert(out == 4);
+	assert(memcmp(s, "\x01\x02\x03\x04", 4) == 0);
+	free(s);
+
+	return EXIT_SUCCESS;
+}

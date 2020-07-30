@@ -21,7 +21,7 @@ install:
 script:
   - go test ./...
   - cd client
-  - meson build && ninja -C build
+  - meson -Db_sanitize=address build && meson test --print-errorlogs -C build
   - meson --optimization=3 -Dssl=false build-no-ssl && ninja -C build-no-ssl
   - cd ..
   - sudo service redis-server start

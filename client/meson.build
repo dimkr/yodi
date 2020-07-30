@@ -76,23 +76,40 @@ if get_option('debug')
 	yodi_c_args += ['-DYODI_DEBUG']
 endif
 
-if ssl
-	yodi_c_args += ['-DYODI_SSL']
-endif
-
 yodi_srcs = [
 	'log.c',
 	'signal.c',
-	'watchdog.c',
 	'client.c',
 	'worker.c',
 	'compress.c',
+	'command.c',
 ]
+
+if ssl
+	yodi_c_args += ['-DYODI_SSL']
+	yodi_srcs += 'base64.c'
+endif
 
 yodi_includes = include_directories('include')
 
 yodi = executable('yodi',
                   yodi_srcs,
+                  'watchdog.c',
                   c_args: yodi_c_args,
                   dependencies: yodi_dependencies,
                   include_directories: yodi_includes)
+
+foreach name : [
+	'base64',
+	'compress',
+	'command',
+]
+	exe = executable('@0@_test'.format(name),
+	                 '@0@.c'.format(name),
+	                 yodi_srcs,
+	                 '@0@_test.c'.format(name),
+	                 c_args: yodi_c_args,
+	                 dependencies: yodi_dependencies,
+	                 include_directories: yodi_includes)
+	test(name, exe)
+endforeach
