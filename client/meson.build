@@ -85,9 +85,14 @@ yodi_srcs = [
 	'command.c',
 ]
 
+yodi_tests = [
+	'compress',
+]
+
 if ssl
 	yodi_c_args += ['-DYODI_SSL']
 	yodi_srcs += 'base64.c'
+	yodi_tests += ['base64', 'command']
 endif
 
 yodi_includes = include_directories('include')
@@ -99,11 +104,7 @@ yodi = executable('yodi',
                   dependencies: yodi_dependencies,
                   include_directories: yodi_includes)
 
-foreach name : [
-	'base64',
-	'compress',
-	'command',
-]
+foreach name: yodi_tests
 	exe = executable('@0@_test'.format(name),
 	                 '@0@.c'.format(name),
 	                 yodi_srcs,
