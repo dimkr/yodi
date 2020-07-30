@@ -46,11 +46,16 @@ papaw = subproject('papaw',
 
 papaw_dependency = papaw.get_variable('papaw_dependency')
 
+miniz = subproject('miniz')
+
+miniz_dependency = miniz.get_variable('miniz_dependency')
+
 yodi_dependencies = [
 	libpaho_embed_mqtt3c_dependency,
 	boydemdb_dependency,
 	parson_dependency,
 	papaw_dependency,
+	miniz_dependency,
 ]
 
 yodi_c_args = [
@@ -81,6 +86,7 @@ yodi_srcs = [
 	'watchdog.c',
 	'client.c',
 	'worker.c',
+	'compress.c',
 ]
 
 yodi_includes = include_directories('include')

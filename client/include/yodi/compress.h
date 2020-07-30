@@ -16,16 +16,5 @@
  * limitations under the License.
  */
 
-#ifndef _YODI_H_INCLUDED
-#	define _YODI_H_INCLUDED
-
-#	include <yodi/auto.h>
-#	include <yodi/log.h>
-#	include <yodi/signal.h>
-#	include <yodi/db.h>
-#	include <yodi/compress.h>
-
-int yodi_client(int argc, char *argv[]);
-int yodi_worker(int argc, char *argv[]);
-
-#endif
+void *yodi_compress(const void *p, const size_t len, size_t *out);
+void *yodi_decompress(const void *p, const size_t len, size_t *out);

@@ -22,7 +22,6 @@ yodi is in its infancy.
 ## Planned Features
 
 * A variety of basic commands understood by the client
-* Compression of command results using [miniz](https://github.com/richgel999/miniz)
 * A HTTP microservice that serves static assets like the client executable, and an installation script that can be piped to the shell in a [curl](https://curl.haxx.se/) one-liner
 * Saving of command results in a persistent database
 
@@ -39,6 +38,8 @@ The glue that holds all these pieces together is [Meson](https://mesonbuild.com/
 The client uses a multi-process architecture without use of execve(), to reduce its memory consumption. The executable is extracted to anonymous memory by the [papaw](github.com/dimkr/papaw) stub, so every execve() is expensive.
 
 Communication between the client processes, or between a client process and the backend, is done through a [SQLite](https://www.sqlite.org/) database.
+
+A MQTT client process receives commands from the backend and saves them to the database. A worker process runs each command, compresses the output using [miniz](https://github.com/richgel999/miniz) and saves it to the database. Later, the client process sends the output to the backend.
 
 A watchdog takes care of restarting the client processes if they crash, and ensures all client processes are terminated when it stops running, for any reason. Crash reports generated using [krisa](github.com/dimkr/krisa) and error logs are sent to the watchdog, saved in the database and periodically published by the client.
 

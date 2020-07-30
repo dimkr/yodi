@@ -251,6 +251,17 @@ static void *run_command(const void *p, const size_t size)
 	return NULL;
 }
 
+static void save_result(const void *p, const size_t len, boydemdb db)
+{
+	yodi_autofree void *comp;
+	size_t out;
+
+	comp = yodi_compress(p, len, &out);
+	if (comp)
+		boydemdb_add(db, YODI_TYPE_RESULT, comp, out);
+}
+
+
 int yodi_worker(int argc, char *argv[])
 {
 	struct timespec one = {.tv_sec = 1}, zero = {0};
@@ -283,7 +294,7 @@ int yodi_worker(int argc, char *argv[])
 				continue;
 
 			yodi_debug("Saving result %s", (char *)res);
-			boydemdb_add(db, YODI_TYPE_RESULT, res, strlen(res));
+			save_result(res, strlen(res), db);
 			free(res);
 		}
 

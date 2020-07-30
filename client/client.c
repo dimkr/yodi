@@ -66,7 +66,8 @@ static int publish_items(MQTTClient *c,
                          const char *topic,
                          const enum QoS qos,
                          boydemdb db,
-                         int log)
+                         const int log,
+                         const int compressed)
 {
 	MQTTMessage msg = {.qos = qos};
 	boydemdb_id id;
@@ -85,8 +86,15 @@ static int publish_items(MQTTClient *c,
 			           (char *)buf,
 			           topic);
 
-		msg.payload = buf;
-		msg.payloadlen = len;
+		if (compressed) {
+			msg.payload = yodi_decompress(buf, len, &msg.payloadlen);
+			if (!msg.payload)
+				return FAILURE;
+		}
+		else {
+			msg.payload = buf;
+			msg.payloadlen = len;
+		}
 
 		ret = MQTTPublish(c, topic, &msg);
 		if (ret != SUCCESS)
@@ -102,14 +110,14 @@ static int publish_results(MQTTClient *c,
                            const char *topic,
                            boydemdb db)
 {
-	return publish_items(c, YODI_TYPE_RESULT, topic, QOS1, db, 1);
+	return publish_items(c, YODI_TYPE_RESULT, topic, QOS1, db, 1, 1);
 }
 
 static int publish_logs(MQTTClient *c,
                         const char *topic,
                         boydemdb db)
 {
-	return publish_items(c, YODI_TYPE_LOG, topic, QOS0, db, 0);
+	return publish_items(c, YODI_TYPE_LOG, topic, QOS0, db, 0, 0);
 }
 
 #ifdef YODI_HAVE_KRISA
@@ -118,7 +126,7 @@ static int report_crashes(MQTTClient *c,
                           const char *topic,
                           boydemdb db)
 {
-	return publish_items(c, YODI_TYPE_BACKTRACE, topic, QOS1, db, 1);
+	return publish_items(c, YODI_TYPE_BACKTRACE, topic, QOS1, db, 1, 0);
 }
 
 #endif

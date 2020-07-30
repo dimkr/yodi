@@ -13,3 +13,6 @@
 [submodule "client/subprojects/papaw"]
 	path = client/subprojects/papaw
 	url = https://github.com/dimkr/papaw/
+[submodule "client/subprojects/miniz"]
+	path = client/subprojects/miniz
+	url = https://github.com/richgel999/miniz
