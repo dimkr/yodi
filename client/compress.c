@@ -60,7 +60,7 @@ void *yodi_decompress(const void *p, const size_t len, size_t *out)
 	if (mz_uncompress(buf,
 	                  &max,
 	                  (unsigned char *)p,
-	                  (mz_ulong)len != MZ_OK)) {
+	                  (mz_ulong)len) != MZ_OK) {
 		free(buf);
 		return NULL;
 	}
