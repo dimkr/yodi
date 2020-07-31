@@ -30,7 +30,7 @@ type UnsubscribeFixedHeader struct {
 func (c *Client) handleUnsubscribe(messageID uint16, topic string) error {
 	log.WithFields(c.logFields).Info("unsubscribing from ", topic)
 
-	if err := c.store.Unsubscribe(c.ctx, c.clientID, topic); err != nil {
+	if err := c.broker.Unsubscribe(c.ctx, c.clientID, topic); err != nil {
 		return err
 	}
 

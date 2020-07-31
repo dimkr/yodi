@@ -59,7 +59,7 @@ func (c *Client) handleConnect(clientID, username, password string) error {
 		return err
 	}
 
-	if err := c.store.AddClient(c.ctx, clientID); err != nil {
+	if err := c.broker.AddClient(c.ctx, clientID); err != nil {
 		log.WithError(err).Warn("failed to add a client")
 		c.writeConnectAck(ConnectionRefusedServerUnavailable)
 		return err

@@ -37,7 +37,7 @@ type Client struct {
 	cancel               context.CancelFunc
 	startMessagesRoutine sync.Once
 	registered           bool
-	store                Store
+	broker               *Broker
 	messageQueue         chan *QueuedMessage
 	lastPingTime         time.Time
 }
@@ -53,7 +53,7 @@ const (
 
 var ErrDisconnected = errors.New("Client has disconnected")
 
-func NewClient(parent context.Context, conn net.Conn, store Store) (*Client, error) {
+func NewClient(parent context.Context, conn net.Conn, broker *Broker) (*Client, error) {
 	t := time.Now().Add(connectionTimeout)
 	if err := conn.SetDeadline(t); err != nil {
 		return nil, err
@@ -68,14 +68,14 @@ func NewClient(parent context.Context, conn net.Conn, store Store) (*Client, err
 		writer:       conn,
 		ctx:          ctx,
 		cancel:       cancel,
-		store:        store,
+		broker:       broker,
 		messageQueue: messageQueue,
 	}, nil
 }
 
 func (c *Client) Close() {
 	if c.registered {
-		if err := c.store.RemoveClient(c.clientID); err != nil {
+		if err := c.broker.RemoveClient(c.clientID); err != nil {
 			log.WithError(err).Warn("Failed to remove a client")
 		}
 	}
@@ -97,7 +97,7 @@ func (c *Client) deliverMessages() {
 			if queuedMessage.QoS != QoS0 {
 				queuedMessage.SendTime = time.Now()
 				queuedMessage.Duplicate = true
-				if err := c.store.UpdateQueuedMessageForSubscriber(c.ctx, c.clientID, queuedMessage); err != nil {
+				if err := c.broker.UpdateQueuedMessageForSubscriber(c.ctx, c.clientID, queuedMessage); err != nil {
 					continue
 				}
 			}
@@ -108,7 +108,7 @@ func (c *Client) deliverMessages() {
 }
 
 func (c *Client) queueMessages() {
-	messagesChannel := c.store.GetMessagesChannelForSubscriber(c.ctx, c.clientID)
+	messagesChannel := c.broker.GetMessagesChannelForSubscriber(c.ctx, c.clientID)
 
 	for {
 		select {
@@ -121,7 +121,7 @@ func (c *Client) queueMessages() {
 		case <-time.After(ackTimeout):
 			now := time.Now()
 
-			c.store.ScanQueuedMessagesForSubscriber(c.ctx, c.clientID, func(queuedMessage *QueuedMessage) {
+			c.broker.ScanQueuedMessagesForSubscriber(c.ctx, c.clientID, func(queuedMessage *QueuedMessage) {
 				if !queuedMessage.Duplicate || now.After(queuedMessage.SendTime.Add(ackTimeout)) {
 					c.messageQueue <- queuedMessage
 				}

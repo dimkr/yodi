@@ -46,7 +46,7 @@ func (c *Client) handleSubscribe(messageID uint16, topic string, qos QoS) error 
 
 	log.WithFields(c.logFields).Info("Subscribing to ", topic)
 
-	if err := c.store.Subscribe(c.ctx, c.clientID, topic); err != nil {
+	if err := c.broker.Subscribe(c.ctx, c.clientID, topic); err != nil {
 		return err
 	}
 

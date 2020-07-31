@@ -26,6 +26,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/dimkr/yodi/pkg/mqtt"
+	"github.com/dimkr/yodi/pkg/store"
 )
 
 const (
@@ -58,15 +59,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	redisClient, err := mqtt.ConnectToRedis(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	store, err := mqtt.NewRedisStore(ctx, redisClient)
+	store, err := store.NewRedisStore(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

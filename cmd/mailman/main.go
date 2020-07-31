@@ -25,6 +25,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/dimkr/yodi/pkg/mqtt"
+	"github.com/dimkr/yodi/pkg/store"
 )
 
 func main() {
@@ -36,23 +37,23 @@ func main() {
 	defer cancel()
 
 	go func() {
-		redisClient, err := mqtt.ConnectToRedis(ctx)
+		store, err := store.NewRedisStore(ctx)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		store, err := mqtt.NewRedisStore(ctx, redisClient)
+		broker, err := mqtt.NewBroker(ctx, store)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		for {
-			queuedMessage, err := store.PopQueuedMessage(ctx)
+			queuedMessage, err := broker.PopQueuedMessage(ctx)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			err = store.QueueMessageForSubscribers(queuedMessage)
+			err = broker.QueueMessageForSubscribers(queuedMessage)
 			if err != nil {
 				log.Fatal(err)
 			}

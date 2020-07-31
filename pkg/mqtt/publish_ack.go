@@ -36,7 +36,7 @@ func (c *Client) writePublishAck(messageID uint16) error {
 }
 
 func (c *Client) handlePublishAck(messageID uint16) error {
-	return c.store.UnqueueMessageForSubscriber(c.ctx, c.clientID, messageID)
+	return c.broker.UnqueueMessageForSubscriber(c.ctx, c.clientID, messageID)
 }
 
 func (c *Client) readPublishAck() error {

@@ -17,7 +17,6 @@
 package mqtt
 
 import (
-	"context"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -30,25 +29,6 @@ type QueuedMessage struct {
 	QoS       QoS       `json:"qos"`
 	Duplicate bool      `json:"dup"`
 	SendTime  time.Time `json:"ts"`
-}
-
-type Store interface {
-	AddClient(ctx context.Context, clientID string) error
-	RemoveClient(clientID string) error
-	Subscribe(ctx context.Context, clientID, topic string) error
-	Unsubscribe(ctx context.Context, clientID, topic string) error
-
-	PopQueuedMessage(ctx context.Context) (*QueuedMessage, error)
-	QueueMessage(topic string, msg []byte, messageID uint16, qos QoS) error
-
-	QueueMessageForSubscribers(queuedMessage *QueuedMessage) error
-	UnqueueMessageForSubscriber(ctx context.Context, clientID string, messageID uint16) error
-
-	QueueMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error
-	UpdateQueuedMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error
-
-	GetMessagesChannelForSubscriber(ctx context.Context, clientID string) <-chan *QueuedMessage
-	ScanQueuedMessagesForSubscriber(ctx context.Context, clientID string, f func(*QueuedMessage)) error
 }
 
 func (m *QueuedMessage) LogFields() log.Fields {
