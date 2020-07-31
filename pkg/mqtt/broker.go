@@ -66,7 +66,11 @@ func (b *Broker) RemoveClient(clientID string) error {
 		return err
 	}
 
-	if err := b.store.Queue(fmt.Sprintf(clientMessageQueueFmt, clientID)).Destroy(b.ctx); err != nil {
+	if err := b.store.Map(fmt.Sprintf(clientMessageQueueFmt, clientID)).Destroy(b.ctx); err != nil {
+		return err
+	}
+
+	if err := b.store.Queue(fmt.Sprintf(clientMessageNotificationFmt, clientID)).Destroy(b.ctx); err != nil {
 		return err
 	}
 
@@ -148,7 +152,7 @@ func (b *Broker) QueueMessageForSubscribers(queuedMessage *QueuedMessage) error 
 }
 
 func (b *Broker) UnqueueMessageForSubscriber(ctx context.Context, clientID string, messageID uint16) error {
-	return b.store.Map(fmt.Sprintf(clientMessageQueueFmt, clientID)).Destroy(ctx)
+	return b.store.Map(fmt.Sprintf(clientMessageQueueFmt, clientID)).Remove(ctx, fmt.Sprintf("%d", messageID))
 }
 
 func (b *Broker) QueueMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error {
