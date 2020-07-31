@@ -25,7 +25,6 @@ import (
 
 type RedisStore struct {
 	redisClient *redis.Client
-	ctx         context.Context
 }
 
 func connectToRedis(ctx context.Context) (*redis.Client, error) {
@@ -50,7 +49,7 @@ func NewRedisStore(ctx context.Context) (Store, error) {
 		return nil, err
 	}
 
-	return &RedisStore{ctx: ctx, redisClient: redisClient}, nil
+	return &RedisStore{redisClient: redisClient}, nil
 }
 
 func (s *RedisStore) Set(key string) Set {
