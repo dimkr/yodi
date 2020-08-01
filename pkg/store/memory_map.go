@@ -31,8 +31,8 @@ func NewMemoryMap(key MemoryKey) *MemoryMap {
 }
 
 func (m *MemoryMap) Set(ctx context.Context, k, v string) error {
-	m.store.Lock()
-	defer m.store.Unlock()
+	m.Lock()
+	defer m.Unlock()
 
 	m.items[k] = v
 
@@ -40,8 +40,8 @@ func (m *MemoryMap) Set(ctx context.Context, k, v string) error {
 }
 
 func (m *MemoryMap) Remove(ctx context.Context, k string) error {
-	m.store.Lock()
-	defer m.store.Unlock()
+	m.Lock()
+	defer m.Unlock()
 
 	if _, ok := m.items[k]; !ok {
 		return fmt.Errorf("key does not exist in map")
@@ -53,8 +53,8 @@ func (m *MemoryMap) Remove(ctx context.Context, k string) error {
 }
 
 func (m *MemoryMap) Scan(ctx context.Context, f func(context.Context, string, string)) error {
-	m.store.Lock()
-	defer m.store.Unlock()
+	m.Lock()
+	defer m.Unlock()
 
 	for k, v := range m.items {
 		f(ctx, k, v)

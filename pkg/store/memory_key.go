@@ -18,13 +18,23 @@ package store
 
 import (
 	"context"
+	"sync"
 )
 
 type MemoryKey struct {
+	lock  sync.Mutex
 	store *MemoryStore
 	key   string
 }
 
 func (k *MemoryKey) Destroy(ctx context.Context) error {
 	return k.store.Destroy(k.key)
+}
+
+func (k *MemoryKey) Lock() {
+	k.lock.Lock()
+}
+
+func (k *MemoryKey) Unlock() {
+	k.lock.Unlock()
 }

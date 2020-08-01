@@ -19,7 +19,7 @@ install:
   - sudo tar -xzf ~/toolchains/mips-any32-linux-musl.tar.gz -C /
 
 script:
-  - go test ./...
+  - go test -timeout 10s ./...
   - cd client
   - meson -Db_sanitize=address build && meson test --print-errorlogs -C build
   - meson --optimization=3 -Dssl=false build-no-ssl && ninja -C build-no-ssl

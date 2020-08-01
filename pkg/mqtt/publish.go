@@ -24,7 +24,7 @@ import (
 )
 
 func (c *Client) handlePublish(topic string, msg []byte, messageID uint16, qos QoS) error {
-	if err := c.broker.QueueMessage(topic, msg, messageID, qos); err != nil {
+	if err := c.broker.QueueMessage(topic, string(msg), messageID, qos); err != nil {
 		return err
 	}
 

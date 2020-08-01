@@ -39,8 +39,8 @@ func (s *MemoryStore) Unlock() {
 }
 
 func (s *MemoryStore) Set(key string) Set {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	if set, ok := s.items[key]; ok {
 		return set.(*MemorySet)
@@ -52,8 +52,8 @@ func (s *MemoryStore) Set(key string) Set {
 }
 
 func (s *MemoryStore) Queue(key string) Queue {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	if q, ok := s.items[key]; ok {
 		return q.(*MemoryQueue)
@@ -65,8 +65,8 @@ func (s *MemoryStore) Queue(key string) Queue {
 }
 
 func (s *MemoryStore) Map(key string) Map {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	if m, ok := s.items[key]; ok {
 		return m.(*MemoryMap)
@@ -78,8 +78,8 @@ func (s *MemoryStore) Map(key string) Map {
 }
 
 func (s *MemoryStore) Destroy(key string) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	if _, ok := s.items[key]; !ok {
 		return errors.New("key does not exist")

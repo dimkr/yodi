@@ -31,8 +31,8 @@ func NewMemorySet(key MemoryKey) *MemorySet {
 }
 
 func (s *MemorySet) Add(ctx context.Context, val string) error {
-	s.store.Lock()
-	defer s.store.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	if _, ok := s.items[val]; ok {
 		return fmt.Errorf("value already exists in set")
@@ -43,8 +43,8 @@ func (s *MemorySet) Add(ctx context.Context, val string) error {
 }
 
 func (s *MemorySet) Remove(ctx context.Context, val string) error {
-	s.store.Lock()
-	defer s.store.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	if _, ok := s.items[val]; !ok {
 		return fmt.Errorf("value does not exist in set")
@@ -56,10 +56,10 @@ func (s *MemorySet) Remove(ctx context.Context, val string) error {
 }
 
 func (s *MemorySet) Scan(ctx context.Context, f func(context.Context, string)) error {
-	s.store.Lock()
-	defer s.store.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
-	for k, _ := range s.items {
+	for k := range s.items {
 		f(ctx, k)
 	}
 
@@ -67,12 +67,12 @@ func (s *MemorySet) Scan(ctx context.Context, f func(context.Context, string)) e
 }
 
 func (s *MemorySet) Members(ctx context.Context) ([]string, error) {
-	s.store.Lock()
-	defer s.store.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	members := make([]string, 0)
 
-	for k, _ := range s.items {
+	for k := range s.items {
 		members = append(members, k)
 	}
 

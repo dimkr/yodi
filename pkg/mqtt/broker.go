@@ -102,9 +102,19 @@ func (b *Broker) Unsubscribe(ctx context.Context, clientID, topic string) error 
 	return b.store.Set(fmt.Sprintf(clientSubscriptionsSetFmt, clientID)).Remove(ctx, topic)
 }
 
-func decodeMessage(raw []byte) (*QueuedMessage, error) {
+func encodeMessage(queuedMessage *QueuedMessage) (string, error) {
+	j, err := json.Marshal(queuedMessage)
+	if err != nil {
+		log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to marshal a queued message")
+		return "", err
+	}
+
+	return string(j), nil
+}
+
+func decodeMessage(raw string) (*QueuedMessage, error) {
 	var msg QueuedMessage
-	err := json.Unmarshal(raw, &msg)
+	err := json.Unmarshal([]byte(raw), &msg)
 	if err != nil {
 		log.WithFields(log.Fields{"raw": raw}).WithError(err).Warn("failed to decode a message")
 		return nil, err
@@ -119,25 +129,25 @@ func (b *Broker) popMessage(ctx context.Context, queue string) (*QueuedMessage, 
 		return nil, err
 	}
 
-	return decodeMessage([]byte(result))
+	return decodeMessage(result)
 }
 
 func (b *Broker) PopQueuedMessage(ctx context.Context) (*QueuedMessage, error) {
 	return b.popMessage(ctx, messageQueue)
 }
 
-func (b *Broker) QueueMessage(topic string, msg []byte, messageID uint16, qos QoS) error {
-	queuedMessage := QueuedMessage{ID: messageID, Topic: topic, Message: string(msg), QoS: qos}
+func (b *Broker) QueueMessage(topic string, msg string, messageID uint16, qos QoS) error {
+	queuedMessage := QueuedMessage{ID: messageID, Topic: topic, Message: msg, QoS: qos}
 
 	log.WithFields(queuedMessage.LogFields()).Info("Queueing a message")
 
-	j, err := json.Marshal(queuedMessage)
+	j, err := encodeMessage(&queuedMessage)
 	if err != nil {
 		log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to marshal a queued message")
 		return err
 	}
 
-	err = b.store.Queue(messageQueue).Push(b.ctx, string(j))
+	err = b.store.Queue(messageQueue).Push(b.ctx, j)
 	if err != nil {
 		log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to queue a message")
 	}
@@ -156,42 +166,42 @@ func (b *Broker) UnqueueMessageForSubscriber(ctx context.Context, clientID strin
 }
 
 func (b *Broker) QueueMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error {
-	j, err := json.Marshal(queuedMessage)
+	j, err := encodeMessage(queuedMessage)
 	if err != nil {
 		log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to marshal a queued message")
 		return err
 	}
 
 	if queuedMessage.QoS != QoS0 {
-		err := b.store.Map(fmt.Sprintf(clientMessageQueueFmt, clientID)).Set(ctx, fmt.Sprintf("%d", queuedMessage.ID), string(j))
+		err := b.store.Map(fmt.Sprintf(clientMessageQueueFmt, clientID)).Set(ctx, fmt.Sprintf("%d", queuedMessage.ID), j)
 		if err != nil {
 			log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to add an unacked message")
 		}
 	}
 
-	return b.store.Queue(fmt.Sprintf(clientMessageNotificationFmt, clientID)).Push(ctx, string(j))
+	return b.store.Queue(fmt.Sprintf(clientMessageNotificationFmt, clientID)).Push(ctx, j)
 }
 
 func (b *Broker) UpdateQueuedMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error {
-	j, err := json.Marshal(queuedMessage)
+	j, err := encodeMessage(queuedMessage)
 	if err != nil {
 		log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to marshal a queued message")
 		return err
 	}
 
-	return b.store.Map(fmt.Sprintf(clientMessageQueueFmt, clientID)).Set(ctx, fmt.Sprintf("%d", queuedMessage.ID), string(j))
+	return b.store.Map(fmt.Sprintf(clientMessageQueueFmt, clientID)).Set(ctx, fmt.Sprintf("%d", queuedMessage.ID), j)
 }
 
 func (b *Broker) notifyClient(ctx context.Context, clientID string, c chan<- *QueuedMessage) {
-	key := fmt.Sprintf(clientMessageNotificationFmt, clientID)
+	q := b.store.Queue(fmt.Sprintf(clientMessageNotificationFmt, clientID))
 
 	for {
-		result, err := b.store.Queue(key).Pop(ctx)
+		result, err := q.Pop(ctx)
 		if err != nil {
 			break
 		}
 
-		queuedMessage, err := decodeMessage([]byte(result))
+		queuedMessage, err := decodeMessage(result)
 		if err != nil {
 			continue
 		}
@@ -208,7 +218,7 @@ func (b *Broker) GetMessagesChannelForSubscriber(ctx context.Context, clientID s
 
 func (b *Broker) ScanQueuedMessagesForSubscriber(ctx context.Context, clientID string, f func(*QueuedMessage)) error {
 	return b.store.Map(fmt.Sprintf(clientMessageQueueFmt, clientID)).Scan(ctx, func(ctx context.Context, k, v string) {
-		queuedMessage, err := decodeMessage([]byte(v))
+		queuedMessage, err := decodeMessage(v)
 		if err != nil {
 			return
 		}
