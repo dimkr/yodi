@@ -104,9 +104,8 @@ func TestQueueMessage_QoS0(t *testing.T) {
 	clientID := "abcd"
 	topic := "/topic"
 	msg := "{}"
-	var ID uint16 = 1234
 
-	assert.Nil(t, broker.QueueMessage(topic, msg, ID, QoS0))
+	assert.Nil(t, broker.QueueMessage(topic, msg, 1234, QoS0))
 
 	queuedMessage, err := broker.PopQueuedMessage(ctx)
 	assert.Nil(t, err)
@@ -123,7 +122,8 @@ func TestQueueMessage_QoS0(t *testing.T) {
 
 	assert.Nil(t, broker.QueueMessageForSubscribers(queuedMessage))
 
-	assert.Equal(t, msg, (<-c).Message)
+	receivedMessage := <-c
+	assert.Equal(t, msg, receivedMessage.Message)
 
 	queuedMessages := make([]*QueuedMessage, 0)
 	assert.Nil(t, broker.ScanQueuedMessagesForSubscriber(ctx, clientID, func(queuedMessage *QueuedMessage) {
@@ -132,7 +132,7 @@ func TestQueueMessage_QoS0(t *testing.T) {
 
 	assert.Equal(t, 0, len(queuedMessages))
 
-	assert.NotNil(t, broker.UnqueueMessageForSubscriber(ctx, clientID, ID))
+	assert.NotNil(t, broker.UnqueueMessageForSubscriber(ctx, clientID, receivedMessage.ID))
 }
 
 func TestQueueMessage_QoS1(t *testing.T) {
@@ -147,9 +147,8 @@ func TestQueueMessage_QoS1(t *testing.T) {
 	clientID := "abcd"
 	topic := "/topic"
 	msg := "{}"
-	var ID uint16 = 1234
 
-	assert.Nil(t, broker.QueueMessage(topic, msg, ID, QoS1))
+	assert.Nil(t, broker.QueueMessage(topic, msg, 1234, QoS1))
 
 	queuedMessage, err := broker.PopQueuedMessage(ctx)
 	assert.Nil(t, err)
@@ -166,7 +165,8 @@ func TestQueueMessage_QoS1(t *testing.T) {
 
 	assert.Nil(t, broker.QueueMessageForSubscribers(queuedMessage))
 
-	assert.Equal(t, msg, (<-c).Message)
+	receivedMessage := <-c
+	assert.Equal(t, msg, receivedMessage.Message)
 
 	queuedMessages := make([]*QueuedMessage, 0)
 	assert.Nil(t, broker.ScanQueuedMessagesForSubscriber(ctx, clientID, func(queuedMessage *QueuedMessage) {
@@ -176,7 +176,7 @@ func TestQueueMessage_QoS1(t *testing.T) {
 	assert.Equal(t, 1, len(queuedMessages))
 	assert.Equal(t, msg, queuedMessages[0].Message)
 
-	assert.Nil(t, broker.UnqueueMessageForSubscriber(ctx, clientID, ID))
+	assert.Nil(t, broker.UnqueueMessageForSubscriber(ctx, clientID, receivedMessage.ID))
 
 	queuedMessages = make([]*QueuedMessage, 0)
 	assert.Nil(t, broker.ScanQueuedMessagesForSubscriber(ctx, clientID, func(queuedMessage *QueuedMessage) {
@@ -184,4 +184,46 @@ func TestQueueMessage_QoS1(t *testing.T) {
 	}))
 
 	assert.Equal(t, 0, len(queuedMessages))
+}
+
+func TestQueueMessage_QoS1_MessageIDReuse(t *testing.T) {
+	store := store.NewMemoryStore()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	broker, err := NewBroker(ctx, store)
+	assert.Nil(t, err)
+
+	clientID := "abcd"
+	topic := "/topic"
+	msg := "{}"
+
+	assert.Nil(t, broker.QueueMessage(topic, msg, 1234, QoS1))
+	assert.Nil(t, broker.QueueMessage(topic, msg, 1234, QoS1))
+
+	assert.Nil(t, broker.Subscribe(ctx, clientID, topic))
+
+	c := broker.GetMessagesChannelForSubscriber(ctx, clientID)
+	select {
+	case <-c:
+		t.FailNow()
+	default:
+	}
+
+	for i := 0; i < 2; i++ {
+		queuedMessage, err := broker.PopQueuedMessage(ctx)
+		assert.Nil(t, err)
+		assert.Equal(t, msg, queuedMessage.Message)
+
+		assert.Nil(t, broker.QueueMessageForSubscribers(queuedMessage))
+	}
+
+	receivedMessage := <-c
+	assert.Equal(t, msg, receivedMessage.Message)
+
+	secondReceivedMessage := <-c
+	assert.Equal(t, msg, receivedMessage.Message)
+
+	assert.NotEqual(t, secondReceivedMessage.ID, receivedMessage.ID)
 }

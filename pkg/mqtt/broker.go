@@ -20,7 +20,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net"
+	"time"
 
 	"github.com/dimkr/yodi/pkg/store"
 	log "github.com/sirupsen/logrus"
@@ -165,15 +167,23 @@ func (b *Broker) UnqueueMessageForSubscriber(ctx context.Context, clientID strin
 	return b.store.Map(fmt.Sprintf(clientMessageQueueFmt, clientID)).Remove(ctx, fmt.Sprintf("%d", messageID))
 }
 
+func generateMessageID() uint16 {
+	// TODO: is this unique enough?
+	return uint16(time.Now().UnixNano() % math.MaxUint16)
+}
+
 func (b *Broker) QueueMessageForSubscriber(ctx context.Context, clientID string, queuedMessage *QueuedMessage) error {
-	j, err := encodeMessage(queuedMessage)
+	queuedMessageForSubscriber := *queuedMessage
+	queuedMessageForSubscriber.ID = generateMessageID()
+
+	j, err := encodeMessage(&queuedMessageForSubscriber)
 	if err != nil {
 		log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to marshal a queued message")
 		return err
 	}
 
 	if queuedMessage.QoS != QoS0 {
-		err := b.store.Map(fmt.Sprintf(clientMessageQueueFmt, clientID)).Set(ctx, fmt.Sprintf("%d", queuedMessage.ID), j)
+		err := b.store.Map(fmt.Sprintf(clientMessageQueueFmt, clientID)).Set(ctx, fmt.Sprintf("%d", queuedMessageForSubscriber.ID), j)
 		if err != nil {
 			log.WithFields(queuedMessage.LogFields()).WithError(err).Warn("failed to add an unacked message")
 		}
