@@ -61,6 +61,37 @@ func TestSubscribe_Twice(t *testing.T) {
 	assert.Nil(t, broker.Subscribe(ctx, clientID, topic))
 }
 
+func TestSubscribe_TwoBrokers(t *testing.T) {
+	store := store.NewMemoryStore()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	broker, err := NewBroker(ctx, store)
+	assert.Nil(t, err)
+
+	clientID := "abcd"
+	topic := "/topic"
+
+	assert.Nil(t, broker.Subscribe(ctx, clientID, topic))
+	assert.NotNil(t, broker.Subscribe(ctx, clientID, topic))
+
+	otherBroker, err := NewBroker(ctx, store)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, broker.Subscribe(ctx, clientID, topic))
+	assert.NotNil(t, otherBroker.Subscribe(ctx, clientID, topic))
+
+	assert.Nil(t, broker.Unsubscribe(ctx, clientID, topic))
+	assert.Nil(t, broker.Subscribe(ctx, clientID, topic))
+
+	assert.Nil(t, broker.Unsubscribe(ctx, clientID, topic))
+	assert.Nil(t, otherBroker.Subscribe(ctx, clientID, topic))
+
+	assert.Nil(t, otherBroker.Unsubscribe(ctx, clientID, topic))
+	assert.Nil(t, broker.Subscribe(ctx, clientID, topic))
+}
+
 func TestQueueMessage_QoS0(t *testing.T) {
 	store := store.NewMemoryStore()
 
