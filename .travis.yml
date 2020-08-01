@@ -22,7 +22,7 @@ script:
   - go test -timeout 10s ./...
   - cd client
   - meson -Db_sanitize=address build && meson test --print-errorlogs -C build
-  - meson --optimization=3 -Dssl=false build-no-ssl && ninja -C build-no-ssl
+  - meson -Db_sanitize=address --optimization=3 -Dssl=false build-no-ssl && ninja -C build-no-ssl
   - cd ..
   - sudo service redis-server start
   - sleep 1
