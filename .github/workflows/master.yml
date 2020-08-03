@@ -1,0 +1,22 @@
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install dependencies
+      run: sudo apt-get update -qq && sudo apt-get install -y python3 python3-pip python3-setuptools python3-wheel gcc ccache cmake curl unzip redis-server mosquitto-clients
+    - name: Install gimme
+      run: curl -L https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | sudo tee /usr/local/bin/gimme && sudo chmod 755 /usr/local/bin/gimme
+    - name: Install Go
+      run: gimme stable
+    - name: Install Python packages
+      run: python3 -m pip install meson ninja
+    - name: Install ARM toolchain
+      run: curl -L https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz | sudo tar -xz -f - -C /
+    - name: Install MIPS toolchain
+      run: curl -L https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz | sudo tar -xz -f - -C /
+    - name: Test backend
+      run: go test -timeout 10s ./...
+    - name: Test client
+      run: cd client && meson -Db_sanitize=address build && meson test --print-errorlogs -C build
