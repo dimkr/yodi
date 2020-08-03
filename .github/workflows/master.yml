@@ -10,7 +10,8 @@ jobs:
       run: curl -L https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | sudo tee /usr/local/bin/gimme && sudo chmod 755 /usr/local/bin/gimme
     - name: Clone repo
       uses: actions/checkout@v2
-      submodules: true
+      with:
+        submodules: true
     - name: Install Go
       run: gimme stable
     - name: Install Python packages
