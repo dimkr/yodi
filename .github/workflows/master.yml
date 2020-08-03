@@ -6,8 +6,19 @@ jobs:
     steps:
     - name: Install dependencies
       run: sudo apt-get update -qq && sudo apt-get install -y python3-setuptools python3-wheel ccache cmake redis-server mosquitto-clients
+    - name: Cache Go
+      uses: actions/cache@v2
+      env:
+        cache-name: go
+      with:
+        path: |
+          /usr/local/bin/gimme
+          ~/.gimme
+          ~/gopath/pkg/mod/cache
+          ~/.cache/go-build
+        key: go
     - name: Install gimme
-      run: curl -L https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | sudo tee /usr/local/bin/gimme && sudo chmod 755 /usr/local/bin/gimme
+      run: test -f /usr/local/bin/gimme || curl -L https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | sudo tee /usr/local/bin/gimme && sudo chmod 755 /usr/local/bin/gimme
     - name: Clone repo
       uses: actions/checkout@v2
       with:
@@ -15,13 +26,38 @@ jobs:
         fetch-depth: 0 # xz-embedded cannot be cloned with depth 1
     - name: Install Go
       run: gimme stable
+    - name: Cache Python packages
+      uses: actions/cache@v2
+      env:
+        cache-name: pip
+      with:
+        path: ~/.cache/pip
+        key: pip
     - name: Install Python packages
-      run: sudo python3 -m pip install meson ninja
+      run: python3 -m pip install meson ninja && echo "::add-path::~/.local/bin"
+    - name: Cache toolchains
+      uses: actions/cache@v2
+      env:
+        cache-name: toolchains
+      with:
+        path: ~/toolchains
+        key: toolchains
+    - name: Download ARM toolchain
+      run: test -f ~/toolchains/arm-any32-linux-musleabi.tar.gz || curl -Lo ~/toolchains/arm-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz
+    - name: Download MIPS toolchain
+      run: test -f ~/toolchains/mips-any32-linux-musl.tar.gz || curl -Lo ~/toolchains/mips-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz
     - name: Install ARM toolchain
-      run: curl -L https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz | sudo tar -xz -f - -C /
+      run: sudo tar -xz -f ~/toolchains/arm-any32-linux-musleabi.tar.gz -C /
     - name: Install MIPS toolchain
-      run: curl -L https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz | sudo tar -xz -f - -C /
+      run: sudo tar -xz -f ~/toolchains/mips-any32-linux-musl.tar.gz -C /
     - name: Test backend
       run: go test -timeout 10s ./...
+    - name: Cache ccache
+      uses: actions/cache@v2
+      env:
+        cache-name: ccache
+      with:
+        path: ~/.ccache
+        key: ccache
     - name: Test client
       run: cd client && meson -Db_sanitize=address build && meson test --print-errorlogs -C build
