@@ -6,39 +6,41 @@ jobs:
     steps:
     - name: Install dependencies
       run: sudo apt-get update -qq && sudo apt-get install -y python3-setuptools python3-wheel ccache cmake redis-server mosquitto-clients
-    - name: Cache Go
+    - name: Configure Cache
       uses: actions/cache@v2
       env:
-        cache-name: go
+        cache-name: cache
       with:
         path: |
           ~/.ccache
-          /usr/local/bin/gimme
+          ~/.local/bin/gimme
           ~/.gimme
           ~/.cache/go-build
           ~/gopath/pkg/mod/cache
           ~/toolchains
           ~/.cache/pip
+          ~/arm-any32-linux-musleabi.tar.gz
+          ~/mips-any32-linux-musl.tar.gz
         key: go
     - name: Install gimme
-      run: test -f /usr/local/bin/gimme || curl -L https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | sudo tee /usr/local/bin/gimme && sudo chmod 755 /usr/local/bin/gimme
+      run: test -f ~/.local/bin/gimme || curl -L -o ~/.local/bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme && chmod 755 ~/.local/bin/gimme
     - name: Clone repo
       uses: actions/checkout@v2
       with:
         submodules: recursive
         fetch-depth: 0 # xz-embedded cannot be cloned with depth 1
     - name: Install Go
-      run: gimme stable
+      run: ~/.local/bin/gimme stable && go env
     - name: Install Python packages
       run: python3 -m pip install meson ninja
     - name: Download ARM toolchain
-      run: mkdir -p ~/toolchains/ && test -f ~/toolchains/arm-any32-linux-musleabi.tar.gz || curl -Lo ~/toolchains/arm-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz
+      run: test -f ~/arm-any32-linux-musleabi.tar.gz || curl -Lo ~/arm-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz
     - name: Download MIPS toolchain
-      run: test -f ~/toolchains/mips-any32-linux-musl.tar.gz || curl -Lo ~/toolchains/mips-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz
+      run: test -f ~/mips-any32-linux-musl.tar.gz || curl -Lo ~/mips-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz
     - name: Install ARM toolchain
-      run: sudo tar -xz -f ~/toolchains/arm-any32-linux-musleabi.tar.gz -C /
+      run: sudo tar -xz -f ~/arm-any32-linux-musleabi.tar.gz -C /
     - name: Install MIPS toolchain
-      run: sudo tar -xz -f ~/toolchains/mips-any32-linux-musl.tar.gz -C /
+      run: sudo tar -xz -f ~/mips-any32-linux-musl.tar.gz -C /
     - name: Test backend
       run: go test -timeout 10s ./...
     - name: Test client
