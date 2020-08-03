@@ -11,7 +11,7 @@ jobs:
     - name: Clone repo
       uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - name: Install Go
       run: gimme stable
     - name: Install Python packages
