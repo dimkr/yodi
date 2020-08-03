@@ -22,6 +22,8 @@ jobs:
           ~/arm-any32-linux-musleabi.tar.gz
           ~/mips-any32-linux-musl.tar.gz
         key: go
+    - name: Create ~/.local/bin
+      run: mkdir -p ~/.local/bin
     - name: Install gimme
       run: test -f ~/.local/bin/gimme || curl -L -o ~/.local/bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme && chmod 755 ~/.local/bin/gimme
     - name: Clone repo
