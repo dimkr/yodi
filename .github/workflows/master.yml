@@ -12,6 +12,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         submodules: recursive
+        fetch-depth: 0 # xz-embedded cannot be cloned with depth 1
     - name: Install Go
       run: gimme stable
     - name: Install Python packages
