@@ -16,8 +16,7 @@ jobs:
           ~/.local/bin/gimme
           ~/.gimme
           ~/.cache/go-build
-          ~/gopath/pkg/mod/cache
-          ~/toolchains
+          ~/go
           ~/.cache/pip
           ~/arm-any32-linux-musleabi.tar.gz
           ~/mips-any32-linux-musl.tar.gz
@@ -32,7 +31,7 @@ jobs:
         submodules: recursive
         fetch-depth: 0 # xz-embedded cannot be cloned with depth 1
     - name: Install Go
-      run: ~/.local/bin/gimme stable && go env
+      run: ~/.local/bin/gimme stable
     - name: Install Python packages
       run: python3 -m pip install meson ninja
     - name: Download ARM toolchain
