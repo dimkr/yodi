@@ -20,7 +20,7 @@ jobs:
           ~/.cache/pip
           ~/arm-any32-linux-musleabi.tar.gz
           ~/mips-any32-linux-musl.tar.gz
-        key: go
+        key: cache
     - name: Create ~/.local/bin
       run: mkdir -p ~/.local/bin
     - name: Install gimme
@@ -60,6 +60,7 @@ jobs:
         sudo service redis-server start
         sleep 1
         CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/broker
+        export REDIS_URL=redis://localhost
         PORT=1883 ./broker &
         sleep 1
         ./client/build-no-ssl/yodi -h localhost -i 0b8e29de-13a1-43cf-a793-4d898440550e -u user1 -p password1 &
