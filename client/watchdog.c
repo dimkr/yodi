@@ -56,6 +56,7 @@ static pid_t start_service(struct yodi_service *svcs,
                            const int logr,
                            const int logw)
 {
+	struct timespec ts = {.tv_sec = 1};
 	struct yodi_service *svc = &svcs[i];
 	int s[2], killfd;
 	unsigned int j;
@@ -90,13 +91,16 @@ static pid_t start_service(struct yodi_service *svcs,
 		if ((killfd != KILLFD) ||
 		    (yodi_setsig(killfd, SIGKILL) < 0) ||
 		    (fcntl(killfd, F_SETFD, FD_CLOEXEC) < 0) ||
-		    (dup2(logw, STDERR_FILENO) != STDERR_FILENO))
+		    (dup2(logw, STDERR_FILENO) != STDERR_FILENO)) {
+			nanosleep(&ts, NULL);
 			exit(EXIT_FAILURE);
+		}
 
 		close(logw);
 
 		prctl(PR_SET_NAME, svc->name);
 
+		nanosleep(&ts, NULL);
 		exit(svc->fn(argc, argv));
 
 	case -1:
@@ -235,7 +239,6 @@ int main(int argc, char *argv[])
 		YODI_SVC(client),
 		YODI_SVC(worker),
 	};
-	struct timespec ts = {.tv_sec = 1};
 	sigset_t mask, chld;
 	yodi_db_autoclose boydemdb db = BOYDEMDB_INIT;
 	int fds[2];
@@ -324,8 +327,6 @@ int main(int argc, char *argv[])
 
 		if (start_service(svcs, id, n, argc, argv, logr, logw) < 0)
 			break;
-
-		nanosleep(&ts, NULL);
 	}
 
 reap:
