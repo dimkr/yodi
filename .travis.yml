@@ -41,7 +41,6 @@ script:
 addons:
   apt:
     packages:
-      - redis-server
       - mosquitto-clients
       - qemu-user-static
 
