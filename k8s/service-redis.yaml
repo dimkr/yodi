@@ -34,7 +34,6 @@ metadata:
   selfLink: /api/v1/namespaces/default/services/redis
   uid: 6cad1212-ed3c-46e2-9947-4d3eb7a2351c
 spec:
-  clusterIP: 10.43.57.15
   ports:
   - port: 6379
     protocol: TCP

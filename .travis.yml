@@ -12,13 +12,19 @@ env:
 
 install:
   - python3 -m pip install meson ninja
-  - mkdir -p ~/toolchains
+  - mkdir -p ~/toolchains ~/k8s
   - test -f ~/toolchains/arm-any32-linux-musleabi.tar.gz || curl -Lo ~/toolchains/arm-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz
   - sudo tar -xzf ~/toolchains/arm-any32-linux-musleabi.tar.gz -C /
   - test -f ~/toolchains/mips-any32-linux-musl.tar.gz || curl -Lo ~/toolchains/mips-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz
   - sudo tar -xzf ~/toolchains/mips-any32-linux-musl.tar.gz -C /
+  - test -f ~/k8s/kubectl || curl -Lo ~/k8s/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+  - test -f ~/k8s/minikube || curl -Lo ~/k8s/minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+  - install -m 755 ~/k8s/kubectl ~/k8s/minikube /usr/local/bin/
 
 script:
+  - minikube start
+  - kubectl apply -f k8s
+  - kubectl get pods
   - go test -timeout 10s ./...
   - cd client
   - meson -Db_sanitize=address build && meson test --print-errorlogs -C build
@@ -51,3 +57,4 @@ cache:
     - ~/gopath/pkg/mod/cache
     - ~/toolchains
     - ~/.cache/pip
+    - ~/k8s

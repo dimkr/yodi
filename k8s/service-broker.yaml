@@ -34,7 +34,6 @@ metadata:
   selfLink: /api/v1/namespaces/default/services/broker
   uid: ce6f930a-97ad-4abf-b66f-125dd5b13b91
 spec:
-  clusterIP: 10.43.77.1
   ports:
   - port: 1883
     protocol: TCP

@@ -34,7 +34,6 @@ metadata:
   selfLink: /api/v1/namespaces/default/services/web
   uid: fb35a532-bb41-4d4d-9466-eff20faee82a
 spec:
-  clusterIP: 10.43.39.2
   ports:
   - port: 80
     protocol: TCP
