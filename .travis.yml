@@ -28,7 +28,7 @@ install:
 script:
   - docker build -f docker/Dockerfile.broker -t yodi/broker .
   - docker build -f docker/Dockerfile.mailman -t yodi/mailman .
-  - kubectl apply -fR k8s
+  - kubectl apply -f k8s -R
   - kubectl get pods
   - go test -timeout 10s ./...
   - cd client
