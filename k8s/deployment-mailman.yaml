@@ -119,7 +119,7 @@ spec:
       - env:
         - name: REDIS_URL
           value: redis://redis
-        image: eu.gcr.io/yodi-282216/mailman
+        image: yodi/mailman
         imagePullPolicy: Always
         name: mailman
         resources: {}

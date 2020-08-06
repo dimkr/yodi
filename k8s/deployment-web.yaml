@@ -115,7 +115,7 @@ spec:
         app: web
     spec:
       containers:
-      - image: eu.gcr.io/yodi-282216/web
+      - image: yodi/web
         imagePullPolicy: Always
         name: web
         ports:

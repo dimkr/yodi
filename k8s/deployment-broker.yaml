@@ -125,7 +125,7 @@ spec:
       - env:
         - name: REDIS_URL
           value: redis://redis
-        image: eu.gcr.io/yodi-282216/broker
+        image: yodi/broker
         imagePullPolicy: Always
         name: broker
         ports:

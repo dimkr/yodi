@@ -7,6 +7,9 @@ git:
   submodules: true
   depth: 10
 
+services:
+  - docker
+
 env:
   - REDIS_URL=redis://localhost
 
@@ -22,7 +25,10 @@ install:
   - sudo install -m 755 ~/k8s/kubectl ~/k8s/minikube /usr/local/bin/
 
 script:
-  - minikube start
+  - docker build -f docker/Dockerfile.broker -t yodi/broker .
+  - docker build -f docker/Dockerfile.mailman -t yodi/mailman .
+  - docker build -f docker/Dockerfile.web -t yodi/web .
+  - minikube start --cpus=1 --memory=256mb --disk-size=1gb
   - kubectl apply -f k8s
   - kubectl get pods
   - go test -timeout 10s ./...
@@ -58,3 +64,4 @@ cache:
     - ~/toolchains
     - ~/.cache/pip
     - ~/k8s
+    - ~/.minikube/cache/
