@@ -27,7 +27,7 @@ install:
 script:
   - docker build -f docker/Dockerfile.broker -t yodi/broker .
   - docker build -f docker/Dockerfile.mailman -t yodi/mailman .
-  - minikube start --memory=256mb --disk-size=2gb
+  - minikube start --memory=1gb --disk-size=2gb
   - kubectl apply -f k8s
   - kubectl get pods
   - go test -timeout 10s ./...
@@ -63,4 +63,4 @@ cache:
     - ~/toolchains
     - ~/.cache/pip
     - ~/k8s
-    - ~/.minikube/cache/
+    - ~/.minikube/cache
