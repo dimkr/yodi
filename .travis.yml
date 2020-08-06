@@ -19,7 +19,7 @@ install:
   - sudo tar -xzf ~/toolchains/mips-any32-linux-musl.tar.gz -C /
   - test -f ~/k8s/kubectl || curl -Lo ~/k8s/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
   - test -f ~/k8s/minikube || curl -Lo ~/k8s/minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-  - install -m 755 ~/k8s/kubectl ~/k8s/minikube /usr/local/bin/
+  - sudo install -m 755 ~/k8s/kubectl ~/k8s/minikube /usr/local/bin/
 
 script:
   - minikube start
