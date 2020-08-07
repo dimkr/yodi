@@ -24,3 +24,7 @@ spec:
         ports:
         - containerPort: 2883
           protocol: TCP
+      initContainers:
+        - name: busybox
+          image: busybox
+          command: ['sh', '-c', 'until nc -zw2 redis 6379; do sleep 1; done']

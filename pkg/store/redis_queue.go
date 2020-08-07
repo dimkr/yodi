@@ -31,5 +31,9 @@ func (q *RedisQueue) Push(ctx context.Context, val string) error {
 
 func (q *RedisQueue) Pop(ctx context.Context) (string, error) {
 	result, err := q.Client.BLPop(ctx, 0, q.Key).Result()
+	if err != nil {
+		return "", err
+	}
+
 	return result[1], err
 }

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: deploy clean
+.PHONY: deploy clean minikube-start
 
 all: build
 
@@ -78,12 +78,15 @@ clean:
 
 deploy: deploy/k8s/*
 	kubectl apply -f deploy/k8s -R
-	for x in `kubectl get pods -o json | jq -r ".items[].metadata.name"`; do kubectl wait --for=condition=ready --timeout=10s pod/$$x || exit 1; done
-	sleep 25 # TODO: why isn't waiting for the pods enough?
+	for x in `kubectl get pods -o json | jq -r ".items[].metadata.name"`; do kubectl wait --for=condition=ready --timeout=15s pod/$$x || exit 1; done
 
-start:
+minikube-start:
 	minikube start --disk-size=2gb
+
+minikube-build: minikube-start
 	eval $$(minikube -p minikube docker-env) && $(MAKE) build
+
+start: minikube-build
 	eval $$(minikube -p minikube docker-env) && $(MAKE) deploy
 
 stop:
