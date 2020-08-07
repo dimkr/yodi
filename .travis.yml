@@ -33,15 +33,14 @@ install:
   - echo -ne '#!/bin/sh\nexec minikube kubectl -- "$@"' > ~/.local/bin/kubectl
   - chmod 755 ~/.local/bin/kubectl
 
-before_script:
-  - minikube start --disk-size=2gb
-
 script:
   - go test -timeout 10s ./...
   - cd client
   - meson -Db_sanitize=address build && meson test --print-errorlogs -C build
   - meson -Db_sanitize=address --optimization=3 -Dssl=false build-no-ssl && ninja -C build-no-ssl
   - cd ..
+  - make build-client
+  - minikube start --disk-size=2gb
   - eval $(minikube -p minikube docker-env) && make -j`nproc`
   - eval $(minikube -p minikube docker-env) && make deploy
   - kubectl describe svc
