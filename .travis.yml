@@ -26,12 +26,7 @@ install:
   - minikube start --disk-size=2gb
 
 script:
-  - docker build -f docker/Dockerfile.broker -t yodi/broker .
-  - docker build -f docker/Dockerfile.mailman -t yodi/mailman .
-  - minikube start --memory=1gb --disk-size=2gb
-  - kubectl apply -f k8s -R
-  - kubectl wait --for=condition=Ready pod/broker
-  - kubectl wait --for=condition=Ready pod/mailman
+  - eval $(minikube -p minikube docker-env) && make -j`nproc` && make deploy
   - go test -timeout 10s ./...
   - cd client
   - meson -Db_sanitize=address build && meson test --print-errorlogs -C build

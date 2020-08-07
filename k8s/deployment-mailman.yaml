@@ -120,7 +120,6 @@ spec:
         - name: REDIS_URL
           value: redis://redis
         image: yodi/mailman
-        imagePullPolicy: Always
         name: mailman
         resources: {}
         terminationMessagePath: /dev/termination-log

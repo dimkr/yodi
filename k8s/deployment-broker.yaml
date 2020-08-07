@@ -126,7 +126,6 @@ spec:
         - name: REDIS_URL
           value: redis://redis
         image: yodi/broker
-        imagePullPolicy: Always
         name: broker
         ports:
         - containerPort: 2883
