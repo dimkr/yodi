@@ -35,12 +35,9 @@ script:
   - meson -Db_sanitize=address build && meson test --print-errorlogs -C build
   - cd ..
   - make build-client
-  - minikube start --disk-size=2gb
-  - eval $(minikube -p minikube docker-env) && make -j`nproc`
-  - eval $(minikube -p minikube docker-env) && make deploy
+  - make -j`nproc` start
   - curl -o /tmp/client http://`minikube ip`:`kubectl get svc web -o json | jq .spec.ports[0].nodePort`/static/client-linux-i386
   - chmod 755 /tmp/client
-  - sleep 20
   - /tmp/client -h `minikube ip` -p `kubectl get svc broker -o json | jq .spec.ports[0].nodePort` -i 0b8e29de-13a1-43cf-a793-4d898440550e -u user1 -P password1 &
   - (sleep 1 && mosquitto_pub -h `minikube ip` -p `kubectl get svc broker -o json | jq .spec.ports[0].nodePort` -u user3 -P password3 -t /0b8e29de-13a1-43cf-a793-4d898440550e/commands -f ci/command.json -q 1) &
   - mosquitto_sub -h `minikube ip` -p `kubectl get svc broker -o json | jq .spec.ports[0].nodePort` -u user2 -P password2 -t /0b8e29de-13a1-43cf-a793-4d898440550e/results -W 10 -C 1 > result

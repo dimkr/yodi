@@ -79,3 +79,12 @@ clean:
 deploy: deploy/k8s/*
 	kubectl apply -f deploy/k8s -R
 	for x in `kubectl get pods -o json | jq -r ".items[].metadata.name"`; do kubectl wait --for=condition=ready --timeout=10s pod/$$x || exit 1; done
+	sleep 25 # TODO: why isn't waiting for the pods enough?
+
+start:
+	minikube start --disk-size=2gb
+	eval $(minikube -p minikube docker-env) && $(MAKE) build
+	eval $(minikube -p minikube docker-env) && $(make) deploy
+
+stop:
+	minikube delete
