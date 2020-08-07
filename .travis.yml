@@ -36,6 +36,7 @@ script:
   - cd ..
   - make build-client
   - make -j`nproc` start
+  - sleep 5
   - curl -o /tmp/client http://`minikube ip`:`kubectl get svc web -o json | jq .spec.ports[0].nodePort`/static/client-linux-i386
   - chmod 755 /tmp/client
   - /tmp/client -h `minikube ip` -p `kubectl get svc broker -o json | jq .spec.ports[0].nodePort` -i 0b8e29de-13a1-43cf-a793-4d898440550e -u user1 -P password1 &
