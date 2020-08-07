@@ -23,12 +23,13 @@ install:
   - test -f ~/k8s/kubectl || curl -Lo ~/k8s/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
   - test -f ~/k8s/minikube || curl -Lo ~/k8s/minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
   - sudo install -m 755 ~/k8s/kubectl ~/k8s/minikube /usr/local/bin/
+  - minikube start --disk-size=2gb
 
 script:
   - docker build -f docker/Dockerfile.broker -t yodi/broker .
   - docker build -f docker/Dockerfile.mailman -t yodi/mailman .
   - minikube start --memory=1gb --disk-size=2gb
-  - kubectl apply -f k8s
+  - kubectl apply -f k8s -R
   - kubectl wait --for=condition=Ready pod/broker
   - kubectl wait --for=condition=Ready pod/mailman
   - go test -timeout 10s ./...
