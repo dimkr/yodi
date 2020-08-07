@@ -29,7 +29,8 @@ script:
   - docker build -f docker/Dockerfile.mailman -t yodi/mailman .
   - minikube start --memory=1gb --disk-size=2gb
   - kubectl apply -f k8s
-  - kubectl get pods
+  - kubectl wait --for=condition=Ready pod/broker
+  - kubectl wait --for=condition=Ready pod/mailman
   - go test -timeout 10s ./...
   - cd client
   - meson -Db_sanitize=address build && meson test --print-errorlogs -C build
