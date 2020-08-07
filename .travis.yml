@@ -10,9 +10,6 @@ git:
 services:
   - docker
 
-env:
-  - REDIS_URL=redis://localhost
-
 before_install:
   - mkdir -p ~/dl
   - test -f ~/dl/arm-any32-linux-musleabi.tar.gz || curl -Lo ~/dl/arm-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz
