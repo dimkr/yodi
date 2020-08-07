@@ -38,8 +38,7 @@ metadata:
 spec:
   externalTrafficPolicy: Cluster
   ports:
-  - nodePort: 30001
-    port: 1883
+  - port: 1883
     protocol: TCP
     targetPort: 2883
   selector:
