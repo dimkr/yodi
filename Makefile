@@ -83,8 +83,8 @@ deploy: deploy/k8s/*
 
 start:
 	minikube start --disk-size=2gb
-	eval $(minikube -p minikube docker-env) && $(MAKE) build
-	eval $(minikube -p minikube docker-env) && $(make) deploy
+	eval $$(minikube -p minikube docker-env) && $(MAKE) build
+	eval $$(minikube -p minikube docker-env) && $(MAKE) deploy
 
 stop:
 	minikube delete
