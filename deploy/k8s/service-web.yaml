@@ -1,49 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: "2020-08-07T08:05:20Z"
   labels:
     app: web
-  managedFields:
-  - apiVersion: v1
-    fieldsType: FieldsV1
-    fieldsV1:
-      f:metadata:
-        f:labels:
-          .: {}
-          f:app: {}
-      f:spec:
-        f:externalTrafficPolicy: {}
-        f:ports:
-          .: {}
-          k:{"port":80,"protocol":"TCP"}:
-            .: {}
-            f:nodePort: {}
-            f:port: {}
-            f:protocol: {}
-            f:targetPort: {}
-        f:selector:
-          .: {}
-          f:app: {}
-        f:sessionAffinity: {}
-        f:type: {}
-    manager: kubectl
-    operation: Update
-    time: "2020-08-07T08:10:56Z"
   name: web
-  namespace: default
-  resourceVersion: "979"
-  selfLink: /api/v1/namespaces/default/services/web
-  uid: 1fbc3f3c-476c-4209-bea2-21d34b21751d
+  resourceVersion: "0"
 spec:
-  externalTrafficPolicy: Cluster
   ports:
   - port: 80
     protocol: TCP
     targetPort: 8080
   selector:
     app: web
-  sessionAffinity: None
   type: NodePort
-status:
-  loadBalancer: {}

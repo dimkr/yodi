@@ -1,38 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: "2020-07-11T12:16:36Z"
   labels:
     app: redis
-  managedFields:
-  - apiVersion: v1
-    fieldsType: FieldsV1
-    fieldsV1:
-      f:metadata:
-        f:labels:
-          .: {}
-          f:app: {}
-      f:spec:
-        f:ports:
-          .: {}
-          k:{"port":6379,"protocol":"TCP"}:
-            .: {}
-            f:port: {}
-            f:protocol: {}
-            f:targetPort: {}
-        f:selector:
-          .: {}
-          f:app: {}
-        f:sessionAffinity: {}
-        f:type: {}
-    manager: kubectl
-    operation: Update
-    time: "2020-07-11T12:16:36Z"
   name: redis
-  namespace: default
-  resourceVersion: "42572"
-  selfLink: /api/v1/namespaces/default/services/redis
-  uid: 6cad1212-ed3c-46e2-9947-4d3eb7a2351c
+  resourceVersion: "0"
 spec:
   ports:
   - port: 6379
@@ -40,7 +12,3 @@ spec:
     targetPort: 6379
   selector:
     app: redis
-  sessionAffinity: None
-  type: ClusterIP
-status:
-  loadBalancer: {}

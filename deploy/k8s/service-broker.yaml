@@ -1,49 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: "2020-08-07T08:08:08Z"
   labels:
     app: broker
-  managedFields:
-  - apiVersion: v1
-    fieldsType: FieldsV1
-    fieldsV1:
-      f:metadata:
-        f:labels:
-          .: {}
-          f:app: {}
-      f:spec:
-        f:externalTrafficPolicy: {}
-        f:ports:
-          .: {}
-          k:{"port":1883,"protocol":"TCP"}:
-            .: {}
-            f:nodePort: {}
-            f:port: {}
-            f:protocol: {}
-            f:targetPort: {}
-        f:selector:
-          .: {}
-          f:app: {}
-        f:sessionAffinity: {}
-        f:type: {}
-    manager: kubectl
-    operation: Update
-    time: "2020-08-07T08:11:15Z"
   name: broker
-  namespace: default
-  resourceVersion: "986"
-  selfLink: /api/v1/namespaces/default/services/broker
-  uid: 4e3a9c88-607a-4d17-be2b-d76c41462c96
+  resourceVersion: "0"
 spec:
-  externalTrafficPolicy: Cluster
   ports:
   - port: 1883
     protocol: TCP
     targetPort: 2883
   selector:
     app: broker
-  sessionAffinity: None
   type: NodePort
-status:
-  loadBalancer: {}
