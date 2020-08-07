@@ -31,6 +31,9 @@
 #define MQTT_BUFSIZ 1024 * 1024
 #define MQTT_TIMEOUT 3000
 
+#define CONNECT_INTERVAL 3
+#define CONNECT_TRIES 5
+
 #define SIGMQTT SIGRTMIN
 #define RESULT_POLL_INTERVAL 1
 
@@ -133,7 +136,7 @@ int yodi_client(int argc, char *argv[])
 	MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
 	Network n;
 	MQTTClient c;
-	struct timespec ts = {.tv_sec = RESULT_POLL_INTERVAL};
+	struct timespec ts = {.tv_sec = CONNECT_INTERVAL};
 	siginfo_t si;
 	sigset_t set;
 	yodi_db_autoclose boydemdb db = BOYDEMDB_INIT;
@@ -141,6 +144,7 @@ int yodi_client(int argc, char *argv[])
 	char *host = NULL, *id = NULL, *user = NULL, *password = NULL;
 	long tmp;
 	int port = MQTT_PORT, ret = EXIT_FAILURE;
+	unsigned int i;
 
 	while (1) {
 		switch (getopt(argc, argv, "h:p:i:u:P:")) {
@@ -198,9 +202,20 @@ parsed:
 		return EXIT_FAILURE;
 
 	NetworkInit(&n);
-	yodi_debug("Connecting to %s:%d", host, port);
-	if (NetworkConnect(&n, host, port) != SUCCESS)
+
+	for (i = 0; i < CONNECT_TRIES; ++i) {
+		yodi_debug("Connecting to %s:%d", host, port);
+
+		if (NetworkConnect(&n, host, port) != SUCCESS)
+			return EXIT_FAILURE;
+
+		if (sigtimedwait(&set, &si, &ts) < 0) {
+			if (errno == EAGAIN)
+				continue;
+		}
+
 		return EXIT_FAILURE;
+	}
 
 	if (yodi_setsig(n.my_socket, SIGMQTT) < 0) {
 		NetworkDisconnect(&n);
@@ -244,6 +259,7 @@ parsed:
 	yodi_debug("Subscribed to %s", cmd_topic);
 
 	c.private = db;
+	ts.tv_sec = RESULT_POLL_INTERVAL;
 
 	while (1) {
 		if (sigtimedwait(&set, &si, &ts) < 0) {
