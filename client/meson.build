@@ -29,7 +29,6 @@ libpaho_embed_mqtt3c_dependency = paho_mqtt_embedded_c.get_variable('libpaho_emb
 boydemdb = subproject('boydemdb',
                       default_options: [
                       	'default_library=static',
-                      	'url=https://www.sqlite.org/2020/sqlite-amalgamation-3320300.zip',
                       ])
 boydemdb_dependency = boydemdb.get_variable('boydemdb_dependency')
 
