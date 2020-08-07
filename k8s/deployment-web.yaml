@@ -116,6 +116,7 @@ spec:
     spec:
       containers:
       - image: yodi/web
+        imagePullPolicy: IfNotPresent
         name: web
         ports:
         - containerPort: 8080
