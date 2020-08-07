@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+.PHONY: deploy clean
+
 all: build
 
 broker: go.mod go.sum cmd/broker/*.go pkg/*/*.go
@@ -69,8 +71,8 @@ build-web: deploy/docker/Dockerfile.web build-client web
 build: build-broker build-mailman build-web
 
 clean:
-	rm -f client-*
+	rm -f client-* broker mailman web
 
-deploy:
+deploy: deploy/k8s/*
 	kubectl apply -f deploy/k8s -R
 	for x in `kubectl get pods -o json | jq -r ".items[].metadata.name"`; do kubectl wait --for=condition=ready --timeout=10s pod/$$x || exit 1; done
