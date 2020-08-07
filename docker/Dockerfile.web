@@ -14,19 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:alpine AS builder
-
-ADD cmd/web /src/cmd/web
-ADD go.mod /src/go.mod
-ADD go.sum /src/go.sum
-WORKDIR /src
-RUN CGO_ENABLED=0 go build -ldflags "-s -w" -o /web ./cmd/web
-
 FROM alpine
-
+ADD web /
 ADD client-* /static/
-
-COPY --from=builder /web /web
-
-CMD /web
 EXPOSE 8000
+CMD /web

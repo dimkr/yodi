@@ -16,10 +16,16 @@
 
 all: build
 
-build-broker: docker/Dockerfile.broker
+broker: go.mod go.sum cmd/broker/*.go pkg/*/*.go
+	CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/broker
+
+build-broker: docker/Dockerfile.broker broker
 	docker build -f docker/Dockerfile.broker -t yodi/broker .
 
-build-mailman: docker/Dockerfile.mailman
+mailman: go.mod go.sum cmd/mailman/*.go pkg/*/*.go
+	CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/mailman
+
+build-mailman: docker/Dockerfile.mailman mailman
 	docker build -f docker/Dockerfile.mailman -t yodi/mailman .
 
 client-linux-arm-ssl:
@@ -54,7 +60,10 @@ client-linux-i386:
 
 build-client: client-linux-arm-ssl client-linux-arm client-linux-armeb-ssl client-linux-armeb client-linux-mips-ssl client-linux-mips client-linux-mipsel-ssl client-linux-mipsel client-linux-i386-ssl client-linux-i386
 
-build-web: docker/Dockerfile.web build-client
+web: go.mod go.sum cmd/web/*.go
+	CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/web
+
+build-web: docker/Dockerfile.web build-client web
 	docker build -f docker/Dockerfile.web -t yodi/web .
 
 build: build-broker build-mailman build-web

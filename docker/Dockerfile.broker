@@ -14,16 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:alpine AS builder
-
-ADD cmd/broker /src/cmd/broker
-ADD pkg/ /src/pkg
-ADD go.mod /src/go.mod
-ADD go.sum /src/go.sum
-WORKDIR /src
-RUN CGO_ENABLED=0 go build -ldflags "-s -w" -o /broker ./cmd/broker
-
 FROM alpine
-COPY --from=builder /broker /broker
+ADD broker /
 EXPOSE 2883
 CMD /broker
