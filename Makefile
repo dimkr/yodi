@@ -29,4 +29,4 @@ build: build-broker build-mailman build-web
 
 deploy:
 	kubectl apply -f k8s -R
-	for x in `kubectl get pods -o json | jq -r ".items[].metadata.name"`; do kubectl wait --for=condition=ready pod/$$x || exit 1; done
+	for x in `kubectl get pods -o json | jq -r ".items[].metadata.name"`; do kubectl wait --for=condition=ready --timeout=10s pod/$$x || exit 1; done
