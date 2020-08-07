@@ -19,52 +19,52 @@ all: build
 broker: go.mod go.sum cmd/broker/*.go pkg/*/*.go
 	CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/broker
 
-build-broker: docker/Dockerfile.broker broker
-	docker build -f docker/Dockerfile.broker -t yodi/broker .
+build-broker: deploy/docker/Dockerfile.broker broker
+	docker build -f deploy/docker/Dockerfile.broker -t yodi/broker .
 
 mailman: go.mod go.sum cmd/mailman/*.go pkg/*/*.go
 	CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/mailman
 
-build-mailman: docker/Dockerfile.mailman mailman
-	docker build -f docker/Dockerfile.mailman -t yodi/mailman .
+build-mailman: deploy/docker/Dockerfile.mailman mailman
+	docker build -f deploy/docker/Dockerfile.mailman -t yodi/mailman .
 
 client-linux-arm-ssl:
-	./build/cross_compile.sh arm-any32-linux-musleabi $@
+	./client/cross_compile.sh arm-any32-linux-musleabi $@
 
 client-linux-arm:
-	./build/cross_compile.sh arm-any32-linux-musleabi $@ -Dssl=false
+	./client/cross_compile.sh arm-any32-linux-musleabi $@ -Dssl=false
 
 client-linux-armeb-ssl:
-	./build/cross_compile.sh armeb-any32-linux-musleabi $@
+	./client/cross_compile.sh armeb-any32-linux-musleabi $@
 
 client-linux-armeb:
-	./build/cross_compile.sh armeb-any32-linux-musleabi $@ -Dssl=false
+	./client/cross_compile.sh armeb-any32-linux-musleabi $@ -Dssl=false
 
 client-linux-mips-ssl:
-	./build/cross_compile.sh mips-any32-linux-musl $@
+	./client/cross_compile.sh mips-any32-linux-musl $@
 
 client-linux-mips:
-	./build/cross_compile.sh mips-any32-linux-musl $@ -Dssl=false
+	./client/cross_compile.sh mips-any32-linux-musl $@ -Dssl=false
 
 client-linux-mipsel-ssl:
-	./build/cross_compile.sh mipsel-any32-linux-musl $@
+	./client/cross_compile.sh mipsel-any32-linux-musl $@
 
 client-linux-mipsel:
-	./build/cross_compile.sh mipsel-any32-linux-musl $@ -Dssl=false
+	./client/cross_compile.sh mipsel-any32-linux-musl $@ -Dssl=false
 
 client-linux-i386-ssl:
-	./build/cross_compile.sh i386-any32-linux-musl $@
+	./client/cross_compile.sh i386-any32-linux-musl $@
 
 client-linux-i386:
-	./build/cross_compile.sh i386-any32-linux-musl $@ -Dssl=false
+	./client/cross_compile.sh i386-any32-linux-musl $@ -Dssl=false
 
 build-client: client-linux-arm-ssl client-linux-arm client-linux-armeb-ssl client-linux-armeb client-linux-mips-ssl client-linux-mips client-linux-mipsel-ssl client-linux-mipsel client-linux-i386-ssl client-linux-i386
 
 web: go.mod go.sum cmd/web/*.go
 	CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/web
 
-build-web: docker/Dockerfile.web build-client web
-	docker build -f docker/Dockerfile.web -t yodi/web .
+build-web: deploy/docker/Dockerfile.web build-client web
+	docker build -f deploy/docker/Dockerfile.web -t yodi/web .
 
 build: build-broker build-mailman build-web
 
@@ -72,5 +72,5 @@ clean:
 	rm -f client-*
 
 deploy:
-	kubectl apply -f k8s -R
+	kubectl apply -f deploy/k8s -R
 	for x in `kubectl get pods -o json | jq -r ".items[].metadata.name"`; do kubectl wait --for=condition=ready --timeout=10s pod/$$x || exit 1; done
