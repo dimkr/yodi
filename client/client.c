@@ -206,8 +206,8 @@ parsed:
 	for (i = 0; i < CONNECT_TRIES; ++i) {
 		yodi_debug("Connecting to %s:%d", host, port);
 
-		if (NetworkConnect(&n, host, port) != SUCCESS)
-			return EXIT_FAILURE;
+		if (NetworkConnect(&n, host, port) == SUCCESS)
+			goto connected;
 
 		if (sigtimedwait(&set, &si, &ts) < 0) {
 			if (errno == EAGAIN)
@@ -217,6 +217,9 @@ parsed:
 		return EXIT_FAILURE;
 	}
 
+	return EXIT_FAILURE;
+
+connected:
 	if (yodi_setsig(n.my_socket, SIGMQTT) < 0) {
 		NetworkDisconnect(&n);
 		return EXIT_FAILURE;
