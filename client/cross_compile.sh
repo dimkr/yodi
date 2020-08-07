@@ -19,7 +19,8 @@
 here=`pwd`
 cd client
 
-dir=`mktemp -d`
+rm -rf $dir
+dir=/tmp/build-yodi-client-$1
 trap "rm -rf $dir" EXIT
 
 meson --cross-file=$1 --buildtype=minsize $3 $dir
