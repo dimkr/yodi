@@ -16,10 +16,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-meson --cross-file=$1 --buildtype=minsize build-$1
-ninja -C build-$1
+here=`pwd`
+cd client
+
+dir=`mktemp -d`
+trap "rm -rf $dir" EXIT
+
+meson --cross-file=$1 --buildtype=minsize $3 $dir
+
+cd $here
+
+meson test --print-errorlogs -C $dir
 
 . /opt/x-tools/$1/activate
 
-$1-strip -s -R .note -R .comment build-$1/subprojects/papaw/papaw build-$1/yodi
-python3 build-$1/subprojects/papaw/papawify build-$1/subprojects/papaw/papaw build-$1/yodi $2
+$1-strip -s -R .note -R .comment $dir/subprojects/papaw/papaw $dir/yodi
+python3 $dir/subprojects/papaw/papawify $dir/subprojects/papaw/papaw $dir/yodi $2

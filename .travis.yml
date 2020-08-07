@@ -16,13 +16,19 @@ env:
 before_install:
   - mkdir -p ~/dl
   - test -f ~/dl/arm-any32-linux-musleabi.tar.gz || curl -Lo ~/dl/arm-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz
+  - test -f ~/dl/armeb-any32-linux-musleabi.tar.gz || curl -Lo ~/dl/armeb-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/armeb-any32-linux-musleabi.tar.gz
   - test -f ~/dl/mips-any32-linux-musl.tar.gz || curl -Lo ~/dl/mips-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz
+  - test -f ~/dl/mipsel-any32-linux-musl.tar.gz || curl -Lo ~/dl/mipsel-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mipsel-any32-linux-musl.tar.gz
+  - test -f ~/dl/i386-any32-linux-musl.tar.gz || curl -Lo ~/dl/i386-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/i386-any32-linux-musl.tar.gz
   - test -f ~/dl/minikube || curl -Lo ~/dl/minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 
 install:
   - python3 -m pip install meson ninja
   - sudo tar -xzf ~/dl/arm-any32-linux-musleabi.tar.gz -C /
+  - sudo tar -xzf ~/dl/armeb-any32-linux-musleabi.tar.gz -C /
   - sudo tar -xzf ~/dl/mips-any32-linux-musl.tar.gz -C /
+  - sudo tar -xzf ~/dl/mipsel-any32-linux-musl.tar.gz -C /
+  - sudo tar -xzf ~/dl/i386-any32-linux-musl.tar.gz -C /
   - install -m 755 ~/dl/minikube ~/.local/bin/
   - echo -ne '#!/bin/sh\nexec minikube kubectl -- "$@"' > ~/.local/bin/kubectl
   - chmod 755 ~/.local/bin/kubectl
@@ -34,8 +40,6 @@ script:
   - go test -timeout 10s ./...
   - cd client
   - meson -Db_sanitize=address build && meson test --print-errorlogs -C build
-  - meson --cross-file=arm-any32-linux-musleabi -Dssl_verify=false build-arm && meson test --print-errorlogs -C build-arm
-  - meson --cross-file=mips-any32-linux-musl -Dssl_verify=false build-mips && meson test --print-errorlogs -C build-mips
   - meson -Db_sanitize=address --optimization=3 -Dssl=false build-no-ssl && ninja -C build-no-ssl
   - cd ..
   - eval $(minikube -p minikube docker-env) && make -j`nproc`
