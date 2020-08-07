@@ -31,7 +31,6 @@ install:
   - chmod 755 ~/.local/bin/kubectl
 
 script:
-  - go test -timeout 10s ./...
   - cd client
   - meson -Db_sanitize=address build && meson test --print-errorlogs -C build
   - cd ..
