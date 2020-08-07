@@ -17,6 +17,7 @@
  */
 
 #include <signal.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -138,10 +139,11 @@ int yodi_client(int argc, char *argv[])
 	yodi_db_autoclose boydemdb db = BOYDEMDB_INIT;
 	yodi_autofree unsigned char *rxbuf = NULL, *txbuf = NULL;
 	char *host = NULL, *id = NULL, *user = NULL, *password = NULL;
-	int ret = EXIT_FAILURE;
+	long tmp;
+	int port = MQTT_PORT, ret = EXIT_FAILURE;
 
 	while (1) {
-		switch (getopt(argc, argv, "h:p:i:u:p:")) {
+		switch (getopt(argc, argv, "h:p:i:u:P:")) {
 		case '?':
 			return EXIT_FAILURE;
 
@@ -152,6 +154,13 @@ int yodi_client(int argc, char *argv[])
 			host = optarg;
 			break;
 
+		case 'p':
+			tmp = strtol(optarg, NULL, 10);
+			if ((tmp <= 0) || (tmp > UINT16_MAX))
+				return EXIT_FAILURE;
+			port = (int)tmp;
+			break;
+
 		case 'i':
 			id = optarg;
 			break;
@@ -160,7 +169,7 @@ int yodi_client(int argc, char *argv[])
 			user = optarg;
 			break;
 
-		case 'p':
+		case 'P':
 			password = optarg;
 			break;
 		}
@@ -189,8 +198,8 @@ parsed:
 		return EXIT_FAILURE;
 
 	NetworkInit(&n);
-	yodi_debug("Connecting to %s:%hu", host, MQTT_PORT);
-	if (NetworkConnect(&n, host, MQTT_PORT) != SUCCESS)
+	yodi_debug("Connecting to %s:%d", host, port);
+	if (NetworkConnect(&n, host, port) != SUCCESS)
 		return EXIT_FAILURE;
 
 	if (yodi_setsig(n.my_socket, SIGMQTT) < 0) {
@@ -268,7 +277,7 @@ parsed:
 	ret = EXIT_SUCCESS;
 
 cleanup:
-	yodi_debug("Disconnecting from %s:%hu", host, MQTT_PORT);
+	yodi_debug("Disconnecting from %s:%d", host, port);
 	MQTTDisconnect(&c);
 	NetworkDisconnect(&n);
 

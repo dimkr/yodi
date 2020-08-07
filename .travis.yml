@@ -13,20 +13,24 @@ services:
 env:
   - REDIS_URL=redis://localhost
 
+before_install:
+  - mkdir -p ~/dl
+  - test -f ~/dl/arm-any32-linux-musleabi.tar.gz || curl -Lo ~/dl/arm-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz
+  - test -f ~/dl/mips-any32-linux-musl.tar.gz || curl -Lo ~/dl/mips-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz
+  - test -f ~/dl/minikube || curl -Lo ~/dl/minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+
 install:
   - python3 -m pip install meson ninja
-  - mkdir -p ~/toolchains ~/k8s
-  - test -f ~/toolchains/arm-any32-linux-musleabi.tar.gz || curl -Lo ~/toolchains/arm-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz
-  - sudo tar -xzf ~/toolchains/arm-any32-linux-musleabi.tar.gz -C /
-  - test -f ~/toolchains/mips-any32-linux-musl.tar.gz || curl -Lo ~/toolchains/mips-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz
-  - sudo tar -xzf ~/toolchains/mips-any32-linux-musl.tar.gz -C /
-  - test -f ~/k8s/kubectl || curl -Lo ~/k8s/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
-  - test -f ~/k8s/minikube || curl -Lo ~/k8s/minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-  - sudo install -m 755 ~/k8s/kubectl ~/k8s/minikube /usr/local/bin/
+  - sudo tar -xzf ~/dl/arm-any32-linux-musleabi.tar.gz -C /
+  - sudo tar -xzf ~/dl/mips-any32-linux-musl.tar.gz -C /
+  - install -m 755 ~/dl/minikube ~/.local/bin/
+  - echo -ne '#!/bin/sh\nexec minikube kubectl "$@"' > ~/.local/bin/kubectl
+  - chmod 755 ~/.local/bin/kubectl
+
+before_script:
   - minikube start --disk-size=2gb
 
 script:
-  - eval $(minikube -p minikube docker-env) && make -j`nproc` && make deploy
   - go test -timeout 10s ./...
   - cd client
   - meson -Db_sanitize=address build && meson test --print-errorlogs -C build
@@ -34,16 +38,11 @@ script:
   - meson --cross-file=mips-any32-linux-musl -Dssl_verify=false build-mips && meson test --print-errorlogs -C build-mips
   - meson -Db_sanitize=address --optimization=3 -Dssl=false build-no-ssl && ninja -C build-no-ssl
   - cd ..
-  - sudo service redis-server start
-  - sleep 1
-  - CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/broker
-  - PORT=1883 ./broker &
-  - sleep 1
-  - ./client/build-no-ssl/yodi -h localhost -i 0b8e29de-13a1-43cf-a793-4d898440550e -u user1 -p password1 &
-  - CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/mailman
-  - ./mailman &
-  - (sleep 1 && mosquitto_pub -u user3 -P password3 -t /0b8e29de-13a1-43cf-a793-4d898440550e/commands -f ci/command.json -q 1) &
-  - mosquitto_sub -u user2 -P password2 -t /0b8e29de-13a1-43cf-a793-4d898440550e/results -W 10 -C 1 > result
+  - eval $(minikube -p minikube docker-env) && make -j`nproc`
+  - eval $(minikube -p minikube docker-env) && make deploy
+  - ./client/build-no-ssl/yodi -h `minikube ip` -p `kubectl get svc broker -o json | jq .spec.ports[0].nodePort` -i 0b8e29de-13a1-43cf-a793-4d898440550e -u user1 -P password1 &
+  - (sleep 1 && mosquitto_pub -h `minikube ip` -p `kubectl get svc broker -o json | jq .spec.ports[0].nodePort` -u user3 -P password3 -t /0b8e29de-13a1-43cf-a793-4d898440550e/commands -f ci/command.json -q 1) &
+  - mosquitto_sub -h `minikube ip` -p `kubectl get svc broker -o json | jq .spec.ports[0].nodePort` -u user2 -P password2 -t /0b8e29de-13a1-43cf-a793-4d898440550e/results -W 10 -C 1 > result
   - cmp result ci/result.json
 
 addons:
@@ -57,7 +56,6 @@ cache:
     - ~/.ccache
     - ~/.cache/go-build
     - ~/gopath/pkg/mod/cache
-    - ~/toolchains
+    - ~/dl
     - ~/.cache/pip
-    - ~/k8s
     - ~/.minikube/cache
