@@ -32,8 +32,8 @@ install:
 
 script:
   - make test-backend
-  - make test-client
-  - make build-client
+  - make -j`nproc` test-client
+  - make -j`nproc` build-client
   - make -j`nproc` start
   - curl -o /tmp/client http://`minikube ip`:`kubectl get svc web -o json | jq .spec.ports[0].nodePort`/static/client-linux-i386
   - chmod 755 /tmp/client

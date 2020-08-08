@@ -23,7 +23,7 @@ rm -rf $dir
 dir=/tmp/build-yodi-client-$1-`echo -n "$3" | md5sum | cut -f 1 -d ' '`
 trap "rm -rf $dir" EXIT
 
-meson --cross-file=$1 --buildtype=minsize $3 $dir
+meson --cross-file=$1 --buildtype=minsize $3 $dir > /dev/null
 
 cd $here
 
