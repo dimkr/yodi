@@ -54,9 +54,10 @@ static pid_t start_service(struct yodi_service *svcs,
                            const int argc,
                            char **argv,
                            const int logr,
-                           const int logw)
+                           const int logw,
+                           const long delay)
 {
-	struct timespec ts = {.tv_sec = 1};
+	struct timespec ts = {.tv_sec = delay};
 	struct yodi_service *svc = &svcs[i];
 	int s[2], killfd;
 	unsigned int j;
@@ -92,7 +93,8 @@ static pid_t start_service(struct yodi_service *svcs,
 		    (yodi_setsig(killfd, SIGKILL) < 0) ||
 		    (fcntl(killfd, F_SETFD, FD_CLOEXEC) < 0) ||
 		    (dup2(logw, STDERR_FILENO) != STDERR_FILENO)) {
-			nanosleep(&ts, NULL);
+			if (ts.tv_sec > 0)
+				nanosleep(&ts, NULL);
 			exit(EXIT_FAILURE);
 		}
 
@@ -100,7 +102,8 @@ static pid_t start_service(struct yodi_service *svcs,
 
 		prctl(PR_SET_NAME, svc->name);
 
-		nanosleep(&ts, NULL);
+		if (ts.tv_sec > 0)
+			nanosleep(&ts, NULL);
 		exit(svc->fn(argc, argv));
 
 	case -1:
@@ -302,7 +305,7 @@ int main(int argc, char *argv[])
 		svcs[i].pid = -1;
 
 	for (i = 0; i < n; ++i) {
-		if (start_service(svcs, i, n, argc, argv, logr, logw) < 0)
+		if (start_service(svcs, i, n, argc, argv, logr, logw, 0) < 0)
 			goto reap;
 	}
 
@@ -325,7 +328,7 @@ int main(int argc, char *argv[])
 		reap_service(&svcs[id], &chld, db);
 		unqueue_signal(sig);
 
-		if (start_service(svcs, id, n, argc, argv, logr, logw) < 0)
+		if (start_service(svcs, id, n, argc, argv, logr, logw, 1) < 0)
 			break;
 	}
 
