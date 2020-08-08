@@ -43,6 +43,34 @@ A MQTT client process receives commands from the backend and saves them to the d
 
 A watchdog takes care of restarting the client processes if they crash, and ensures all client processes are terminated when it stops running, for any reason. Crash reports generated using [krisa](github.com/dimkr/krisa) and error logs are sent to the watchdog, saved in the database and periodically published by the client.
 
+## Building
+
+    $ make
+
+This will build all backend services. Since the client can be downloaded from the backend, this also cross-compiles the client.
+
+It is possible to build the client separately:
+
+    $ make build-client
+
+## Development Environment
+
+    $ make start
+
+This will set up a local [Kubernetes](https://kubernetes.io/) cluster using [minikube](https://minikube.sigs.k8s.io/docs/), build yodi and deploy it to the cluster, using the local container images.
+
+To rebuild images that can be deployed to the cluster:
+
+    $ make minikube-build
+
+To re-deploy images to the cluster:
+
+    $ make minikube-deploy
+
+To stop the cluster:
+
+    $ make stop
+
 ## Credits and Legal Information
 
 yodi is free and unencumbered software released under the terms of the [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0); see COPYING for the license text.

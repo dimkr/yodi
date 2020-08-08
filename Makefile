@@ -97,8 +97,10 @@ minikube-start:
 minikube-build: minikube-start
 	eval $$(minikube -p minikube docker-env) && $(MAKE) build
 
-start: minikube-build
+minikube-deploy: minikube-build
 	eval $$(minikube -p minikube docker-env) && $(MAKE) deploy
 
+start: minikube-deploy
+
 stop:
-	minikube delete
+	minikube stop
