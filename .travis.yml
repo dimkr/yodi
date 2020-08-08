@@ -31,10 +31,8 @@ install:
   - chmod 755 ~/.local/bin/kubectl
 
 script:
-  - cd client
-  - meson -Db_sanitize=address build && meson test --print-errorlogs -C build
-  - cd ..
-  - make build-client
+  - make test-backend
+  - make test-client
   - make -j`nproc` start
   - curl -o /tmp/client http://`minikube ip`:`kubectl get svc web -o json | jq .spec.ports[0].nodePort`/static/client-linux-i386
   - chmod 755 /tmp/client
