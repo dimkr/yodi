@@ -175,7 +175,6 @@ void *yodi_run_command(const void *p, const size_t size)
 	JSON_Object *root, *cmdo;
 	const char *type, *id;
 	char *s = NULL;
-	yodi_autofree char *result = NULL;
 	unsigned int i;
 
 	schema = json_parse_string("{\"type\":\"\",\"id\":\"\"}");
