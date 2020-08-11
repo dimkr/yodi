@@ -77,10 +77,10 @@ test-backend:
 	CGO_ENABLED=0 go test -timeout 10s ./...
 
 test-client-gcc:
-	cd client && meson -Db_sanitize=address build-gcc && meson test --print-errorlogs -C build-gcc
+	cd client && meson -Db_sanitize=address build-gcc > /dev/null && meson test --print-errorlogs -C build-gcc
 
 test-client-clang:
-	cd client && CC="ccache clang" meson -Db_sanitize=address build-clang && meson test --print-errorlogs -C build-clang
+	cd client && CC="ccache clang" meson -Db_sanitize=address build-clang > /dev/null && meson test --print-errorlogs -C build-clang
 
 test-client: test-client-gcc test-client-clang
 
