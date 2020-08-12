@@ -74,6 +74,7 @@ build-web: deploy/docker/Dockerfile.web build-client web
 build: build-broker build-mailman build-web
 
 test-backend:
+	CGO_ENABLED=0 go vet ./...
 	CGO_ENABLED=0 go test -timeout 10s ./...
 
 test-client-gcc:

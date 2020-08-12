@@ -22,11 +22,11 @@ import (
 )
 
 type MemorySet struct {
-	MemoryKey
+	*MemoryKey
 	items map[string]struct{}
 }
 
-func NewMemorySet(key MemoryKey) *MemorySet {
+func NewMemorySet(key *MemoryKey) *MemorySet {
 	return &MemorySet{MemoryKey: key, items: make(map[string]struct{})}
 }
 

@@ -46,7 +46,7 @@ func (s *MemoryStore) Set(key string) Set {
 		return set.(*MemorySet)
 	}
 
-	set := NewMemorySet(MemoryKey{store: s, key: key})
+	set := NewMemorySet(&MemoryKey{store: s, key: key})
 	s.items[key] = set
 	return set
 }
@@ -59,7 +59,7 @@ func (s *MemoryStore) Queue(key string) Queue {
 		return q.(*MemoryQueue)
 	}
 
-	q := NewMemoryQueue(MemoryKey{store: s, key: key})
+	q := NewMemoryQueue(&MemoryKey{store: s, key: key})
 	s.items[key] = q
 	return q
 }
@@ -72,7 +72,7 @@ func (s *MemoryStore) Map(key string) Map {
 		return m.(*MemoryMap)
 	}
 
-	m := NewMemoryMap(MemoryKey{store: s, key: key})
+	m := NewMemoryMap(&MemoryKey{store: s, key: key})
 	s.items[key] = m
 	return m
 }

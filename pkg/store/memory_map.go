@@ -22,11 +22,11 @@ import (
 )
 
 type MemoryMap struct {
-	MemoryKey
+	*MemoryKey
 	items map[string]string
 }
 
-func NewMemoryMap(key MemoryKey) *MemoryMap {
+func NewMemoryMap(key *MemoryKey) *MemoryMap {
 	return &MemoryMap{MemoryKey: key, items: make(map[string]string)}
 }
 

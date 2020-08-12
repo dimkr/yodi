@@ -21,13 +21,13 @@ import (
 )
 
 type MemoryQueue struct {
-	MemoryKey
+	*MemoryKey
 	c chan string
 }
 
 const bufferSize = 64
 
-func NewMemoryQueue(key MemoryKey) *MemoryQueue {
+func NewMemoryQueue(key *MemoryKey) *MemoryQueue {
 	return &MemoryQueue{c: make(chan string, bufferSize), MemoryKey: key}
 }
 
