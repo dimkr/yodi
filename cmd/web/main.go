@@ -17,19 +17,63 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 
+	"github.com/dimkr/yodi/pkg/mqtt"
+	"github.com/dimkr/yodi/pkg/store"
+	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 )
 
+var (
+	upgrader websocket.Upgrader
+	broker   *mqtt.Broker
+)
+
+func handleMQTT(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	client, err := broker.NewWebSocketClient(conn)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	client.Run()
+}
+
 func main() {
+	log.SetLevel(log.WarnLevel)
+	log.SetReportCaller(true)
+	log.SetFormatter(&log.JSONFormatter{})
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
+	http.HandleFunc("/mqtt", handleMQTT)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("/static"))))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	store, err := store.NewRedisStore(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	broker, err = mqtt.NewBroker(ctx, store)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
 	}

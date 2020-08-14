@@ -16,9 +16,15 @@ spec:
     spec:
       containers:
       - env:
+        - name: REDIS_URL
+          value: redis://redis
         image: yodi/web
         imagePullPolicy: IfNotPresent
         name: web
         ports:
         - containerPort: 8080
           protocol: TCP
+      initContainers:
+        - name: busybox
+          image: busybox
+          command: ['sh', '-c', 'until nc -zw2 redis 6379; do sleep 1; done']
