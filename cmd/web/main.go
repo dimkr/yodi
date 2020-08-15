@@ -32,6 +32,10 @@ var (
 	broker   *mqtt.Broker
 )
 
+func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
 func handleMQTT(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -58,6 +62,7 @@ func main() {
 		port = "8080"
 	}
 
+	http.HandleFunc("/health", handleHealthCheck)
 	http.HandleFunc("/mqtt", handleMQTT)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("/static"))))
 
