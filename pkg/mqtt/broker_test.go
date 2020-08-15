@@ -113,7 +113,7 @@ func TestQueueMessage_QoS0(t *testing.T) {
 
 	assert.Nil(t, broker.Subscribe(ctx, clientID, topic))
 
-	c := broker.GetMessagesChannelForSubscriber(ctx, clientID)
+	c := broker.GetMessagesChannelForClient(ctx, clientID)
 	select {
 	case <-c:
 		t.FailNow()
@@ -126,7 +126,7 @@ func TestQueueMessage_QoS0(t *testing.T) {
 	assert.Equal(t, msg, receivedMessage.Message)
 
 	queuedMessages := make([]*QueuedMessage, 0)
-	assert.Nil(t, broker.ScanQueuedMessagesForSubscriber(ctx, clientID, func(queuedMessage *QueuedMessage) {
+	assert.Nil(t, broker.ScanQueuedMessagesForClient(ctx, clientID, func(queuedMessage *QueuedMessage) {
 		queuedMessages = append(queuedMessages, queuedMessage)
 	}))
 
@@ -156,7 +156,7 @@ func TestQueueMessage_QoS1(t *testing.T) {
 
 	assert.Nil(t, broker.Subscribe(ctx, clientID, topic))
 
-	c := broker.GetMessagesChannelForSubscriber(ctx, clientID)
+	c := broker.GetMessagesChannelForClient(ctx, clientID)
 	select {
 	case <-c:
 		t.FailNow()
@@ -169,7 +169,7 @@ func TestQueueMessage_QoS1(t *testing.T) {
 	assert.Equal(t, msg, receivedMessage.Message)
 
 	queuedMessages := make([]*QueuedMessage, 0)
-	assert.Nil(t, broker.ScanQueuedMessagesForSubscriber(ctx, clientID, func(queuedMessage *QueuedMessage) {
+	assert.Nil(t, broker.ScanQueuedMessagesForClient(ctx, clientID, func(queuedMessage *QueuedMessage) {
 		queuedMessages = append(queuedMessages, queuedMessage)
 	}))
 
@@ -179,7 +179,7 @@ func TestQueueMessage_QoS1(t *testing.T) {
 	assert.Nil(t, broker.UnqueueMessageForSubscriber(ctx, clientID, receivedMessage.ID))
 
 	queuedMessages = make([]*QueuedMessage, 0)
-	assert.Nil(t, broker.ScanQueuedMessagesForSubscriber(ctx, clientID, func(queuedMessage *QueuedMessage) {
+	assert.Nil(t, broker.ScanQueuedMessagesForClient(ctx, clientID, func(queuedMessage *QueuedMessage) {
 		queuedMessages = append(queuedMessages, queuedMessage)
 	}))
 
@@ -204,7 +204,7 @@ func TestQueueMessage_QoS1_MessageIDReuse(t *testing.T) {
 
 	assert.Nil(t, broker.Subscribe(ctx, clientID, topic))
 
-	c := broker.GetMessagesChannelForSubscriber(ctx, clientID)
+	c := broker.GetMessagesChannelForClient(ctx, clientID)
 	select {
 	case <-c:
 		t.FailNow()
