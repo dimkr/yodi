@@ -18,6 +18,7 @@ package mqtt
 
 import "encoding/binary"
 
+// PublishAckFixedHeader is the fixed header of a PUBACK control packet
 type PublishAckFixedHeader struct {
 	MessageID uint16
 }

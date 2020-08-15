@@ -21,20 +21,20 @@ import (
 	"sync"
 )
 
-type MemoryKey struct {
+type memoryKey struct {
 	lock  sync.Mutex
-	store *MemoryStore
+	store *memoryStore
 	key   string
 }
 
-func (k *MemoryKey) Destroy(ctx context.Context) error {
+func (k *memoryKey) Destroy(ctx context.Context) error {
 	return k.store.Destroy(k.key)
 }
 
-func (k *MemoryKey) Lock() {
+func (k *memoryKey) Lock() {
 	k.lock.Lock()
 }
 
-func (k *MemoryKey) Unlock() {
+func (k *memoryKey) Unlock() {
 	k.lock.Unlock()
 }

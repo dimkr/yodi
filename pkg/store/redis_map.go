@@ -21,16 +21,16 @@ import (
 	"fmt"
 )
 
-type RedisMap struct {
-	RedisKey
+type redisMap struct {
+	redisKey
 }
 
-func (m *RedisMap) Set(ctx context.Context, k, v string) error {
+func (m *redisMap) Set(ctx context.Context, k, v string) error {
 	_, err := m.Client.HSet(ctx, m.Key, k, v).Result()
 	return err
 }
 
-func (m *RedisMap) Remove(ctx context.Context, k string) error {
+func (m *redisMap) Remove(ctx context.Context, k string) error {
 	n, err := m.Client.HDel(ctx, m.Key, k).Result()
 	if err != nil {
 		return err
@@ -43,7 +43,7 @@ func (m *RedisMap) Remove(ctx context.Context, k string) error {
 	return nil
 }
 
-func (m *RedisMap) Scan(ctx context.Context, f func(context.Context, string, string)) error {
+func (m *redisMap) Scan(ctx context.Context, f func(context.Context, string, string)) error {
 	var cursor uint64
 	var results []string
 	var err error

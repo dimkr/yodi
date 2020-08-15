@@ -20,23 +20,23 @@ import (
 	"context"
 )
 
-type MemoryQueue struct {
-	*MemoryKey
+type memoryQueue struct {
+	*memoryKey
 	c chan string
 }
 
 const bufferSize = 64
 
-func NewMemoryQueue(key *MemoryKey) *MemoryQueue {
-	return &MemoryQueue{c: make(chan string, bufferSize), MemoryKey: key}
+func newMemoryQueue(key *memoryKey) *memoryQueue {
+	return &memoryQueue{c: make(chan string, bufferSize), memoryKey: key}
 }
 
-func (q *MemoryQueue) Push(ctx context.Context, val string) error {
+func (q *memoryQueue) Push(ctx context.Context, val string) error {
 	q.c <- val
 	return nil
 }
 
-func (q *MemoryQueue) Pop(ctx context.Context) (string, error) {
+func (q *memoryQueue) Pop(ctx context.Context) (string, error) {
 	select {
 	case <-ctx.Done():
 		return "", ctx.Err()

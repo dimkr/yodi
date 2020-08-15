@@ -18,8 +18,9 @@ package store
 
 import "context"
 
+// Queue is queue that allows non-blocking push and blocking pop
 type Queue interface {
-	Push(context.Context, string)  error
+	Push(context.Context, string) error
 	Pop(context.Context) (string, error)
 	Destroy(context.Context) error
 }

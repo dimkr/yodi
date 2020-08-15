@@ -21,34 +21,62 @@ import (
 	"fmt"
 )
 
+// Header is the fixed MQTT packet header
 type Header struct {
 	Flags         uint8
 	MessageLength uint32
 }
 
+// MessageType is an MQTT packet type
 type MessageType uint8
 
 const (
-	Connect        MessageType = 0b0001
-	ConnectAck     MessageType = 0b0010
-	Disconnect     MessageType = 0b1110
-	Subscribe      MessageType = 0b1000
-	SubscribeAck   MessageType = 0b1001
-	Unsubscribe    MessageType = 0b1010
+	// Connect is a CONNECT control packet
+	Connect MessageType = 0b0001
+
+	// ConnectAck is a CONNACK control packet
+	ConnectAck MessageType = 0b0010
+
+	// Disconnect is a DISCONNECT control packet
+	Disconnect MessageType = 0b1110
+
+	// Subscribe is a SUBSCRIBE control packet
+	Subscribe MessageType = 0b1000
+
+	// SubscribeAck is a SUBACK control packet
+	SubscribeAck MessageType = 0b1001
+
+	// Unsubscribe is an UNSUBSCRIBE control packet
+	Unsubscribe MessageType = 0b1010
+
+	// UnsubscribeAck is an UNSUBACK control packet
 	UnsubscribeAck MessageType = 0b1011
-	Publish        MessageType = 0b0011
-	PublishAck     MessageType = 0b0100
-	PingRequest    MessageType = 0b1100
-	PingResponse   MessageType = 0b1101
+
+	// Publish is a PUBLISH control packet
+	Publish MessageType = 0b0011
+
+	// PublishAck is a PUBPACK control packet
+	PublishAck MessageType = 0b0100
+
+	// PingRequest is a PINGREQ control packet
+	PingRequest MessageType = 0b1100
+
+	// PingResponse is a PINGRESP control packet
+	PingResponse MessageType = 0b1101
 
 	qosMask       = 0b00000110
 	qosShift      = 1
 	duplicateFlag = 0b00001000
 
-	ProtocolName    = "MQTT"
+	// ProtocolName is the protocol name contained in a CONNECT control packet
+	ProtocolName = "MQTT"
+
+	// ProtocolVersion is the protocol version contained in a CONNECT control
+	// packet
 	ProtocolVersion = 4
 )
 
+// GetQoS returns the QoS level of an MQTT control packet
 func (h *Header) GetQoS() (QoS, error) {
 	qos := QoS((h.Flags & qosMask) >> qosShift)
 

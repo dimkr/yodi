@@ -23,8 +23,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// QoS is an MQTT QoS level
 type QoS uint8
 
+// SubscribeFixedHeader is the fixed header of a SUBSCRIBE control packet
 type SubscribeFixedHeader struct {
 	MessageID uint16
 }
@@ -35,7 +37,10 @@ func (c *Client) authenticateSubscribe(topic string, qos QoS) error {
 }
 
 const (
+	// QoS0 is MQTT QoS level 0
 	QoS0 = iota
+
+	// QoS1 is MQTT QoS level 1
 	QoS1
 )
 

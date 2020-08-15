@@ -22,8 +22,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// ReturnCode is an error code contained in a CONNACK control packet
 type ReturnCode uint8
 
+// ConnectAckFixedHeader is the fixed header of a CONNACK control packet
 type ConnectAckFixedHeader struct {
 	AckFlags   uint8
 	ReturnCode ReturnCode

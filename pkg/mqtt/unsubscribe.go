@@ -23,6 +23,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// UnsubscribeFixedHeader is the fixed header of a UNSUBSCRIBE control packet
 type UnsubscribeFixedHeader struct {
 	MessageID uint16
 }

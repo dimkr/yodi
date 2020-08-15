@@ -21,63 +21,64 @@ import (
 	"sync"
 )
 
-type MemoryStore struct {
+type memoryStore struct {
 	lock  sync.Mutex
 	items map[string]interface{}
 }
 
+// NewMemoryStore creates a memory-backed store
 func NewMemoryStore() Store {
-	return &MemoryStore{items: make(map[string]interface{})}
+	return &memoryStore{items: make(map[string]interface{})}
 }
 
-func (s *MemoryStore) Lock() {
+func (s *memoryStore) Lock() {
 	s.lock.Lock()
 }
 
-func (s *MemoryStore) Unlock() {
+func (s *memoryStore) Unlock() {
 	s.lock.Unlock()
 }
 
-func (s *MemoryStore) Set(key string) Set {
+func (s *memoryStore) Set(key string) Set {
 	s.Lock()
 	defer s.Unlock()
 
 	if set, ok := s.items[key]; ok {
-		return set.(*MemorySet)
+		return set.(*memorySet)
 	}
 
-	set := NewMemorySet(&MemoryKey{store: s, key: key})
+	set := newMemorySet(&memoryKey{store: s, key: key})
 	s.items[key] = set
 	return set
 }
 
-func (s *MemoryStore) Queue(key string) Queue {
+func (s *memoryStore) Queue(key string) Queue {
 	s.Lock()
 	defer s.Unlock()
 
 	if q, ok := s.items[key]; ok {
-		return q.(*MemoryQueue)
+		return q.(*memoryQueue)
 	}
 
-	q := NewMemoryQueue(&MemoryKey{store: s, key: key})
+	q := newMemoryQueue(&memoryKey{store: s, key: key})
 	s.items[key] = q
 	return q
 }
 
-func (s *MemoryStore) Map(key string) Map {
+func (s *memoryStore) Map(key string) Map {
 	s.Lock()
 	defer s.Unlock()
 
 	if m, ok := s.items[key]; ok {
-		return m.(*MemoryMap)
+		return m.(*memoryMap)
 	}
 
-	m := NewMemoryMap(&MemoryKey{store: s, key: key})
+	m := newMemoryMap(&memoryKey{store: s, key: key})
 	s.items[key] = m
 	return m
 }
 
-func (s *MemoryStore) Destroy(key string) error {
+func (s *memoryStore) Destroy(key string) error {
 	s.Lock()
 	defer s.Unlock()
 

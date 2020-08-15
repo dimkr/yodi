@@ -18,6 +18,7 @@ package mqtt
 
 import "encoding/binary"
 
+// UnsubscribeAckFixedHeader is the fixed header of an UNSUBACK control packet
 type UnsubscribeAckFixedHeader struct {
 	MessageID uint16
 }

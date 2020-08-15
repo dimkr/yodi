@@ -20,16 +20,16 @@ import (
 	"context"
 )
 
-type RedisQueue struct {
-	RedisKey
+type redisQueue struct {
+	redisKey
 }
 
-func (q *RedisQueue) Push(ctx context.Context, val string) error {
+func (q *redisQueue) Push(ctx context.Context, val string) error {
 	_, err := q.Client.LPush(ctx, q.Key, val).Result()
 	return err
 }
 
-func (q *RedisQueue) Pop(ctx context.Context) (string, error) {
+func (q *redisQueue) Pop(ctx context.Context) (string, error) {
 	result, err := q.Client.BLPop(ctx, 0, q.Key).Result()
 	if err != nil {
 		return "", err

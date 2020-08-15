@@ -18,6 +18,7 @@ package store
 
 import "context"
 
+// Map is an associative array
 type Map interface {
 	Set(context.Context, string, string) error
 	Remove(context.Context, string) error

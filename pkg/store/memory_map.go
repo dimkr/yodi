@@ -21,16 +21,16 @@ import (
 	"fmt"
 )
 
-type MemoryMap struct {
-	*MemoryKey
+type memoryMap struct {
+	*memoryKey
 	items map[string]string
 }
 
-func NewMemoryMap(key *MemoryKey) *MemoryMap {
-	return &MemoryMap{MemoryKey: key, items: make(map[string]string)}
+func newMemoryMap(key *memoryKey) *memoryMap {
+	return &memoryMap{memoryKey: key, items: make(map[string]string)}
 }
 
-func (m *MemoryMap) Set(ctx context.Context, k, v string) error {
+func (m *memoryMap) Set(ctx context.Context, k, v string) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -39,7 +39,7 @@ func (m *MemoryMap) Set(ctx context.Context, k, v string) error {
 	return nil
 }
 
-func (m *MemoryMap) Remove(ctx context.Context, k string) error {
+func (m *memoryMap) Remove(ctx context.Context, k string) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -52,7 +52,7 @@ func (m *MemoryMap) Remove(ctx context.Context, k string) error {
 	return nil
 }
 
-func (m *MemoryMap) Scan(ctx context.Context, f func(context.Context, string, string)) error {
+func (m *memoryMap) Scan(ctx context.Context, f func(context.Context, string, string)) error {
 	m.Lock()
 	defer m.Unlock()
 

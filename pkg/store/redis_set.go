@@ -21,11 +21,11 @@ import (
 	"fmt"
 )
 
-type RedisSet struct {
-	RedisKey
+type redisSet struct {
+	redisKey
 }
 
-func (s *RedisSet) Add(ctx context.Context, val string) error {
+func (s *redisSet) Add(ctx context.Context, val string) error {
 	n, err := s.Client.SAdd(ctx, s.Key, val).Result()
 	if err != nil {
 		return err
@@ -38,7 +38,7 @@ func (s *RedisSet) Add(ctx context.Context, val string) error {
 	return nil
 }
 
-func (s *RedisSet) Remove(ctx context.Context, val string) error {
+func (s *redisSet) Remove(ctx context.Context, val string) error {
 	n, err := s.Client.SRem(ctx, s.Key, val).Result()
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (s *RedisSet) Remove(ctx context.Context, val string) error {
 	return nil
 }
 
-func (s *RedisSet) Scan(ctx context.Context, f func(context.Context, string)) error {
+func (s *redisSet) Scan(ctx context.Context, f func(context.Context, string)) error {
 	var cursor uint64
 	var values []string
 	var err error
@@ -74,6 +74,6 @@ func (s *RedisSet) Scan(ctx context.Context, f func(context.Context, string)) er
 	return nil
 }
 
-func (s *RedisSet) Members(ctx context.Context) ([]string, error) {
+func (s *redisSet) Members(ctx context.Context) ([]string, error) {
 	return s.Client.SMembers(ctx, s.Key).Result()
 }

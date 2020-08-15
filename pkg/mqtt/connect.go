@@ -24,8 +24,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// ConnectFlags holds CONNECT control packet flags
 type ConnectFlags uint8
 
+// ConnectFixedHeader is the fixed header of a CONNECT control packet
 type ConnectFixedHeader struct {
 	ProtocolNameLength uint16
 	ProtocolName       [4]byte
@@ -35,16 +37,32 @@ type ConnectFixedHeader struct {
 }
 
 const (
+	// ConnectionAccepted indicates successful connection
 	ConnectionAccepted ReturnCode = iota
+
+	// ConnectionRefusedUnacceptableProtocolVersion indicates the client speaks
+	// an unknown protocol
 	ConnectionRefusedUnacceptableProtocolVersion
+
+	// ConnectionRefusedIdentifierRejected indicates authentication failure
 	ConnectionRefusedIdentifierRejected
+
+	// ConnectionRefusedServerUnavailable indicates an internal broker error
 	ConnectionRefusedServerUnavailable
-	ConnectionRefusedBadUsernameOrPassword
+
+	// ConnectionRefusedNotAuthorized indicates an invalid CONNECT control
+	// packet
 	ConnectionRefusedNotAuthorized
 
-	UsernameSet           ConnectFlags = 0b10000000
-	PasswordSet           ConnectFlags = 0b01000000
-	mandatoryConnectFlags              = UsernameSet | PasswordSet
+	// UsernameSet indicates that the CONNECT control packet specifies a
+	// username
+	UsernameSet ConnectFlags = 0b10000000
+
+	// PasswordSet indicates that the CONNECT control packet specifies a
+	// password
+	PasswordSet ConnectFlags = 0b01000000
+
+	mandatoryConnectFlags = UsernameSet | PasswordSet
 )
 
 func (c *Client) authenticateConnect(clientID, username, password string) error {

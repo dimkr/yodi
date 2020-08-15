@@ -23,7 +23,7 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-type RedisStore struct {
+type redisStore struct {
 	redisClient *redis.Client
 }
 
@@ -43,23 +43,24 @@ func connectToRedis(ctx context.Context) (*redis.Client, error) {
 	return client, nil
 }
 
+// NewRedisStore creates a Redis-backed store
 func NewRedisStore(ctx context.Context) (Store, error) {
 	redisClient, err := connectToRedis(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &RedisStore{redisClient: redisClient}, nil
+	return &redisStore{redisClient: redisClient}, nil
 }
 
-func (s *RedisStore) Set(key string) Set {
-	return &RedisSet{RedisKey: RedisKey{Key: key, Client: s.redisClient}}
+func (s *redisStore) Set(key string) Set {
+	return &redisSet{redisKey: redisKey{Key: key, Client: s.redisClient}}
 }
 
-func (s *RedisStore) Queue(key string) Queue {
-	return &RedisQueue{RedisKey: RedisKey{Key: key, Client: s.redisClient}}
+func (s *redisStore) Queue(key string) Queue {
+	return &redisQueue{redisKey: redisKey{Key: key, Client: s.redisClient}}
 }
 
-func (s *RedisStore) Map(key string) Map {
-	return &RedisMap{RedisKey: RedisKey{Key: key, Client: s.redisClient}}
+func (s *redisStore) Map(key string) Map {
+	return &redisMap{redisKey: redisKey{Key: key, Client: s.redisClient}}
 }

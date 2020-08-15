@@ -20,6 +20,7 @@ before_install:
   - test -f ~/dl/minikube || curl -Lo ~/dl/minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 
 install:
+  - go get golang.org/x/lint/golint
   - python3 -m pip install meson ninja
   - sudo tar -xzf ~/dl/arm-any32-linux-musleabi.tar.gz -C /
   - sudo tar -xzf ~/dl/armeb-any32-linux-musleabi.tar.gz -C /

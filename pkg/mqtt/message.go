@@ -22,6 +22,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// QueuedMessage is a message published to a topic
 type QueuedMessage struct {
 	ID        uint16    `json:"id"`
 	Topic     string    `json:"topic"`
@@ -31,6 +32,7 @@ type QueuedMessage struct {
 	SendTime  time.Time `json:"ts"`
 }
 
+// LogFields returns logging context for a message
 func (m *QueuedMessage) LogFields() log.Fields {
 	return log.Fields{"id": m.ID, "topic": m.Topic}
 }

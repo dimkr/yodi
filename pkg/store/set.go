@@ -18,6 +18,7 @@ package store
 
 import "context"
 
+// Set is a collection of unique values
 type Set interface {
 	Add(context.Context, string) error
 	Remove(context.Context, string) error

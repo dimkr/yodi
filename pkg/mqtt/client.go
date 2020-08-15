@@ -29,6 +29,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Client is an MQTT client
 type Client struct {
 	clientID             string
 	logFields            log.Fields
@@ -52,12 +53,14 @@ const (
 	maxPasswordLength = 64
 )
 
-var ErrDisconnected = errors.New("Client has disconnected")
+var errDisconnected = errors.New("Client has disconnected")
 
+// NewWebSocketClient creates a new client over a WebSocket connection
 func NewWebSocketClient(parent context.Context, conn *websocket.Conn, broker *Broker) (*Client, error) {
 	return NewClient(parent, wrapWebSocket(conn), broker)
 }
 
+// NewClient creates a new client over a TCP connection
 func NewClient(parent context.Context, conn net.Conn, broker *Broker) (*Client, error) {
 	t := time.Now().Add(connectionTimeout)
 	if err := conn.SetDeadline(t); err != nil {
@@ -78,6 +81,7 @@ func NewClient(parent context.Context, conn net.Conn, broker *Broker) (*Client, 
 	}, nil
 }
 
+// Close disconnects a client
 func (c *Client) Close() {
 	if c.registered {
 		if err := c.broker.RemoveClient(c.clientID); err != nil {
@@ -113,7 +117,7 @@ func (c *Client) deliverMessages() {
 }
 
 func (c *Client) queueMessages() {
-	messagesChannel := c.broker.GetMessagesChannelForSubscriber(c.ctx, c.clientID)
+	messagesChannel := c.broker.GetMessagesChannelForClient(c.ctx, c.clientID)
 
 	for {
 		select {
@@ -126,7 +130,7 @@ func (c *Client) queueMessages() {
 		case <-time.After(ackTimeout):
 			now := time.Now()
 
-			c.broker.ScanQueuedMessagesForSubscriber(c.ctx, c.clientID, func(queuedMessage *QueuedMessage) {
+			c.broker.ScanQueuedMessagesForClient(c.ctx, c.clientID, func(queuedMessage *QueuedMessage) {
 				if !queuedMessage.Duplicate || now.After(queuedMessage.SendTime.Add(ackTimeout)) {
 					c.messageQueue <- queuedMessage
 				}
@@ -177,17 +181,18 @@ func (c *Client) readPacket() error {
 		return c.readUnsubscribe()
 
 	case Disconnect:
-		return ErrDisconnected
+		return errDisconnected
 
 	default:
 		return fmt.Errorf("unknown message type %d", messageType)
 	}
 }
 
+// Run handles incoming messages from a client and delivers messages to it
 func (c *Client) Run() error {
 	for {
 		if err := c.readPacket(); err != nil {
-			if !errors.Is(err, ErrDisconnected) {
+			if !errors.Is(err, errDisconnected) {
 				log.WithFields(c.logFields).Warn(err)
 			}
 			return err

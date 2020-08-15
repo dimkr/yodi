@@ -21,16 +21,16 @@ import (
 	"fmt"
 )
 
-type MemorySet struct {
-	*MemoryKey
+type memorySet struct {
+	*memoryKey
 	items map[string]struct{}
 }
 
-func NewMemorySet(key *MemoryKey) *MemorySet {
-	return &MemorySet{MemoryKey: key, items: make(map[string]struct{})}
+func newMemorySet(key *memoryKey) *memorySet {
+	return &memorySet{memoryKey: key, items: make(map[string]struct{})}
 }
 
-func (s *MemorySet) Add(ctx context.Context, val string) error {
+func (s *memorySet) Add(ctx context.Context, val string) error {
 	s.Lock()
 	defer s.Unlock()
 
@@ -42,7 +42,7 @@ func (s *MemorySet) Add(ctx context.Context, val string) error {
 	return nil
 }
 
-func (s *MemorySet) Remove(ctx context.Context, val string) error {
+func (s *memorySet) Remove(ctx context.Context, val string) error {
 	s.Lock()
 	defer s.Unlock()
 
@@ -55,7 +55,7 @@ func (s *MemorySet) Remove(ctx context.Context, val string) error {
 	return nil
 }
 
-func (s *MemorySet) Scan(ctx context.Context, f func(context.Context, string)) error {
+func (s *memorySet) Scan(ctx context.Context, f func(context.Context, string)) error {
 	s.Lock()
 	defer s.Unlock()
 
@@ -66,7 +66,7 @@ func (s *MemorySet) Scan(ctx context.Context, f func(context.Context, string)) e
 	return nil
 }
 
-func (s *MemorySet) Members(ctx context.Context) ([]string, error) {
+func (s *memorySet) Members(ctx context.Context) ([]string, error) {
 	s.Lock()
 	defer s.Unlock()
 

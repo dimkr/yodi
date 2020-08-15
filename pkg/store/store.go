@@ -14,8 +14,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package store is an abstraction layer for safe operations on data structures.
 package store
 
+// Store manages data structures identified by keys
 type Store interface {
 	Set(string) Set
 	Queue(string) Queue

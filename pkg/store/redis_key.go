@@ -22,12 +22,12 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-type RedisKey struct {
+type redisKey struct {
 	Key    string
 	Client *redis.Client
 }
 
-func (k *RedisKey) Destroy(ctx context.Context) error {
+func (k *redisKey) Destroy(ctx context.Context) error {
 	_, err := k.Client.Del(ctx, k.Key).Result()
 	return err
 }

@@ -22,10 +22,12 @@ import (
 	"io"
 )
 
+// StringReader reads a string from an MQTT connection
 type StringReader struct {
 	io.Reader
 }
 
+// StringWriter writes a string to an MQTT connection
 type StringWriter struct {
 	io.Writer
 }

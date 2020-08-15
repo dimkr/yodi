@@ -18,6 +18,7 @@ package mqtt
 
 import "encoding/binary"
 
+// SubscribeAckFixedHeader is the fixed header of a SUBACK control packet
 type SubscribeAckFixedHeader struct {
 	MessageID uint16
 	QoS       QoS
