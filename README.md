@@ -21,6 +21,7 @@ yodi is in its infancy.
 
 ## Planned Features
 
+* HTTP-based authentication
 * A variety of basic commands understood by the client
 * A HTTP microservice that serves static assets like the client executable, and an installation script that can be piped to the shell in a [curl](https://curl.haxx.se/) one-liner
 * Saving of command results in a persistent database
@@ -28,6 +29,8 @@ yodi is in its infancy.
 ## Implementation
 
 yodi's backend is a partial **and non-conformant** [MQTT v3.1.1](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) broker, implemented in [Go](https://golang.org/). Right now, it supports QoS levels 0 and 1 to some degree and ignores large portions of the standard.
+
+The client and the broker use [WebSocket](https://tools.ietf.org/html/rfc6455) as the underlying transport.
 
 The backend is designed to be horizontally scalable; therefore, data like queued messages is saved in [Redis](https://redis.io/).
 
