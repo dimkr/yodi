@@ -39,7 +39,7 @@ func handleMQTT(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	client, err := broker.NewWebSocketClient(conn)
+	client, err := mqtt.NewWebSocketClient(r.Context(), conn, broker)
 	if err != nil {
 		return
 	}

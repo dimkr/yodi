@@ -25,6 +25,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -52,6 +53,10 @@ const (
 )
 
 var ErrDisconnected = errors.New("Client has disconnected")
+
+func NewWebSocketClient(parent context.Context, conn *websocket.Conn, broker *Broker) (*Client, error) {
+	return NewClient(parent, wrapWebSocket(conn), broker)
+}
 
 func NewClient(parent context.Context, conn net.Conn, broker *Broker) (*Client, error) {
 	t := time.Now().Add(connectionTimeout)

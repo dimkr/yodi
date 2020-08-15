@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/dimkr/yodi/pkg/store"
-	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -49,10 +48,6 @@ func NewBroker(ctx context.Context, store store.Store) (*Broker, error) {
 
 func (b *Broker) NewClient(conn net.Conn) (*Client, error) {
 	return NewClient(b.ctx, conn, b)
-}
-
-func (b *Broker) NewWebSocketClient(conn *websocket.Conn) (*Client, error) {
-	return b.NewClient(wrapWebSocket(conn))
 }
 
 func (b *Broker) AddClient(ctx context.Context, clientID string) error {
