@@ -148,7 +148,7 @@ int yodi_client(int argc, char *argv[])
 	unsigned int i;
 
 	while (1) {
-		switch (getopt(argc, argv, "h:p:i:u:P:")) {
+		switch (getopt(argc, argv, "h:u:p:i:U:P:")) {
 		case '?':
 			return EXIT_FAILURE;
 
