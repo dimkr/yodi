@@ -209,7 +209,7 @@ parsed:
 	NetworkInit(&n);
 
 	for (i = 0; i < CONNECT_TRIES; ++i) {
-		yodi_debug("Connecting to %s:%d", host, port);
+		yodi_debug("Connecting to %s:%d%s", host, port, uri);
 
 		if (NetworkConnectURI(&n, host, port, uri, CONNECT_TIMEOUT) == SUCCESS)
 			goto connected;
@@ -301,7 +301,7 @@ connected:
 	ret = EXIT_SUCCESS;
 
 cleanup:
-	yodi_debug("Disconnecting from %s:%d", host, port);
+	yodi_debug("Disconnecting from %s:%d%s", host, port, uri);
 	MQTTDisconnect(&c);
 	NetworkDisconnect(&n);
 
