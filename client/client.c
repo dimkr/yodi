@@ -33,6 +33,7 @@
 
 #define CONNECT_INTERVAL 1
 #define CONNECT_TRIES 5
+#define CONNECT_TIMEOUT 3000
 
 #define SIGMQTT SIGRTMIN
 #define RESULT_POLL_INTERVAL 1
@@ -141,7 +142,7 @@ int yodi_client(int argc, char *argv[])
 	sigset_t set;
 	yodi_db_autoclose boydemdb db = BOYDEMDB_INIT;
 	yodi_autofree unsigned char *rxbuf = NULL, *txbuf = NULL;
-	char *host = NULL, *id = NULL, *user = NULL, *password = NULL;
+	char *host = NULL, *uri = NULL, *id = NULL, *user = NULL, *password = NULL;
 	long tmp;
 	int port = MQTT_PORT, ret = EXIT_FAILURE;
 	unsigned int i;
@@ -158,6 +159,10 @@ int yodi_client(int argc, char *argv[])
 			host = optarg;
 			break;
 
+		case 'u':
+			uri = optarg;
+			break;
+
 		case 'p':
 			tmp = strtol(optarg, NULL, 10);
 			if ((tmp <= 0) || (tmp > UINT16_MAX))
@@ -169,7 +174,7 @@ int yodi_client(int argc, char *argv[])
 			id = optarg;
 			break;
 
-		case 'u':
+		case 'U':
 			user = optarg;
 			break;
 
@@ -180,7 +185,7 @@ int yodi_client(int argc, char *argv[])
 	}
 
 parsed:
-	if (!host || !id || !user || !password)
+	if (!host || !uri || !id || !user || !password)
 		return EXIT_FAILURE;
 
 	if ((sigemptyset(&set) < 0) ||
@@ -206,7 +211,7 @@ parsed:
 	for (i = 0; i < CONNECT_TRIES; ++i) {
 		yodi_debug("Connecting to %s:%d", host, port);
 
-		if (NetworkConnect(&n, host, port) == SUCCESS)
+		if (NetworkConnectURI(&n, host, port, uri, CONNECT_TIMEOUT) == SUCCESS)
 			goto connected;
 
 		if (sigtimedwait(&set, &si, &ts) < 0) {
