@@ -34,7 +34,7 @@ func (c *webSocketConn) Read(b []byte) (int, error) {
 			}
 		}
 
-		chunk, err := c.frame.Read(b)
+		chunk, err := c.frame.Read(b[n:])
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
 				return n, err
