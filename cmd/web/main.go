@@ -37,7 +37,15 @@ func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMQTT(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+	if r.Header.Get("Sec-Websocket-Protocol") != "mqtt" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	hdr := http.Header{}
+	hdr.Add("Sec-Websocket-Protocol", "mqtt")
+
+	conn, err := upgrader.Upgrade(w, r, hdr)
 	if err != nil {
 		return
 	}
