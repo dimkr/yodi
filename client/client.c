@@ -294,6 +294,9 @@ connected:
 		if (report_crashes(&c, backtrace_topic, db) != SUCCESS)
 			break;
 #endif
+
+		if (MQTTKeepalive(&c, MQTT_TIMEOUT) != SUCCESS)
+			break;
 	}
 
 	yodi_debug("Unsubscribing from %s", cmd_topic);
