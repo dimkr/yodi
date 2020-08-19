@@ -94,15 +94,15 @@ deploy: deploy/k8s/*
 	for x in `kubectl get pods -o json | jq -r ".items[].metadata.name"`; do kubectl wait --for=condition=ready --timeout=15s pod/$$x || exit 1; done
 
 minikube-start:
-	minikube status | grep -q Running || minikube start --disk-size=2gb
+	minikube -p yodi status | grep -q Running || minikube -p yodi start --disk-size=2gb
 
 minikube-build: minikube-start
-	eval $$(minikube -p minikube docker-env) && $(MAKE) build
+	eval $$(minikube -p yodi docker-env) && $(MAKE) build
 
 minikube-deploy: minikube-build
-	eval $$(minikube -p minikube docker-env) && $(MAKE) deploy
+	eval $$(minikube -p yodi docker-env) && $(MAKE) deploy
 
 start: minikube-deploy
 
 stop:
-	minikube stop
+	minikube -p yodi stop
