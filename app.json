@@ -1,0 +1,25 @@
+{
+  "name": "yodi",
+  "description": "Self-hosted device management service",
+  "keywords": [
+    "mqtt",
+    "websocket",
+    "go"
+  ],
+  "stack": "container",
+  "website": "https://github.com/dimkr/yodi",
+  "repository": "https://github.com/dimkr/yodi",
+  "addons": [
+    {
+      "plan": "heroku-redis"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1
+    },
+    "worker": {
+      "quantity": 1
+    }
+  }
+}

@@ -3,3 +3,7 @@
 !/broker
 !/web
 !/client-*
+!/go.mod
+!/go.sum
+!/cmd
+!/pkg

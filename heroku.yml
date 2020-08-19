@@ -1,0 +1,7 @@
+build:
+  docker:
+    web: deploy/heroku/Dockerfile.web
+    worker: deploy/heroku/Dockerfile.worker
+run:
+  web: /web
+  worker: /worker
