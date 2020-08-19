@@ -49,7 +49,6 @@ addons:
     packages:
       - mosquitto-clients
       - qemu-user-static
-      - kubectl
 
 cache:
   directories:
