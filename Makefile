@@ -96,13 +96,14 @@ deploy: deploy/k8s/*
 minikube-start:
 	minikube -p yodi status | grep -q Running || minikube -p yodi start --disk-size=2gb
 
-minikube-build: minikube-start
+minikube-build:
 	eval $$(minikube -p yodi docker-env) && $(MAKE) build
 
-minikube-deploy: minikube-build
+minikube-deploy:
 	eval $$(minikube -p yodi docker-env) && $(MAKE) deploy
 
-start: minikube-deploy
-
-stop:
+minikube-stop:
 	minikube -p yodi stop
+
+minikube-delete:
+	minikube -p yodi delete

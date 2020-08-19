@@ -35,7 +35,9 @@ script:
   - make test-backend
   - make -j`nproc` test-client
   - make -j`nproc` build-client
-  - make -j`nproc` start
+  - make minikube-start
+  - make -j`nproc` minikube-build
+  - make minikube-deploy
   - curl -o /tmp/client http://`minikube ip`:`kubectl get svc web -o json | jq .spec.ports[0].nodePort`/static/client-linux-i386
   - chmod 755 /tmp/client
   - /tmp/client -h `minikube ip` -p `kubectl get svc web -o json | jq .spec.ports[0].nodePort` -u /mqtt -i 0b8e29de-13a1-43cf-a793-4d898440550e -U user1 -P password1 &

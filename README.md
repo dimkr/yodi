@@ -58,21 +58,23 @@ It is possible to build the client separately:
 
 ## Development Environment
 
-    $ make start
+    $ make minikube-start
+    $ make minikube-build
+    $ make minikube-deploy
 
-This will set up a local [Kubernetes](https://kubernetes.io/) cluster using [minikube](https://minikube.sigs.k8s.io/docs/), build yodi and deploy it to the cluster, using the local container images.
+This will set up a local [Kubernetes](https://kubernetes.io/) cluster using [minikube](https://minikube.sigs.k8s.io/docs/), build yodi and deploy it to the cluster.
 
-To rebuild images that can be deployed to the cluster:
+To rebuild images:
 
     $ make minikube-build
 
-To re-deploy images to the cluster:
-
-    $ make minikube-deploy
-
 To stop the cluster:
 
-    $ make stop
+    $ make minikube-stop
+
+To stop and delete the cluster:
+
+    $ make minikube-delete
 
 ## Credits and Legal Information
 
