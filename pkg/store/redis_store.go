@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/go-redis/redis/v8"
+	log "github.com/sirupsen/logrus"
 )
 
 type redisStore struct {
@@ -33,14 +34,22 @@ func connectToRedis(ctx context.Context) (*redis.Client, error) {
 		return nil, err
 	}
 
-	client := redis.NewClient(opts)
+	// Heroku Redis runs Redis 5.0.9, which doesn't have the username argument
+	for _, username := range []string{opts.Username, ""} {
+		opts.Username = username
+		client := redis.NewClient(opts)
 
-	if _, err := client.Ping(ctx).Result(); err != nil {
-		client.Close()
-		return nil, err
+		_, err = client.Ping(ctx).Result()
+		if err != nil {
+			log.WithError(err).Warn("Failed to connect to Redis")
+			client.Close()
+			continue
+		}
+
+		return client, nil
 	}
 
-	return client, nil
+	return nil, err
 }
 
 // NewRedisStore creates a Redis-backed store
