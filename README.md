@@ -34,7 +34,7 @@ The client and the broker use [WebSocket](https://tools.ietf.org/html/rfc6455) a
 
 The backend is designed to be horizontally scalable; therefore, data like queued messages is saved in [Redis](https://redis.io/).
 
-The yodi client is implemented in C, using [a fork](https://github.com/dimkr/paho.mqtt.embedded-c/integration-ssl) of [Eclipse Paho MQTT C/C++ client for Embedded platforms](https://github.com/eclipse/paho.mqtt.embedded-c), [mbed TLS](https://tls.mbed.org/), [SQLite](https://www.sqlite.org/), [parson](https://github.com/kgabis/parson) and the [Mozilla CA certificate bundle](https://curl.haxx.se/docs/mk-ca-bundle.html).
+The yodi client is implemented in C, using [a fork](https://github.com/dimkr/paho.mqtt.embedded-c) of [Eclipse Paho MQTT C/C++ client for Embedded platforms](https://github.com/eclipse/paho.mqtt.embedded-c), [mbed TLS](https://tls.mbed.org/), [SQLite](https://www.sqlite.org/), [parson](https://github.com/kgabis/parson) and the [Mozilla CA certificate bundle](https://curl.haxx.se/docs/mk-ca-bundle.html).
 
 The glue that holds all these pieces together is [Meson](https://mesonbuild.com/) and cross-compilation is done using a collection [musl](https://musl.libc.org/)-based [toolchains](https://github.com/dimkr/toolchains).
 
