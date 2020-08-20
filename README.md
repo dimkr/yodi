@@ -76,6 +76,12 @@ To stop and delete the cluster:
 
     $ make minikube-delete
 
+## Cloud Deployment
+
+yodi can be easily deployed to any cloud provider that offers a managed [Kubernetes](https://kubernetes.io/) cluster service.
+
+Alternatively, yodi can be deployed to [Heroku](https://www.heroku.com): [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
 ## Credits and Legal Information
 
 yodi is free and unencumbered software released under the terms of the [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0); see COPYING for the license text.
