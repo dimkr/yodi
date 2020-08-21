@@ -24,6 +24,8 @@ import (
 	"github.com/dimkr/yodi/pkg/mqtt"
 	"github.com/dimkr/yodi/pkg/store"
 	"github.com/gorilla/websocket"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -32,24 +34,27 @@ var (
 	broker   *mqtt.Broker
 )
 
-func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+func handleHealthCheck(c echo.Context) error {
+	return c.NoContent(http.StatusOK)
 }
 
-func handleMQTT(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+func handleMQTT(c echo.Context) error {
+	r := c.Request()
+
+	conn, err := upgrader.Upgrade(c.Response().Writer, r, nil)
 	if err != nil {
-		return
+		return err
 	}
 	defer conn.Close()
 
 	client, err := mqtt.NewWebSocketClient(r.Context(), conn, broker)
 	if err != nil {
-		return
+		return err
 	}
 	defer client.Close()
 
 	client.Run()
+	return nil
 }
 
 func main() {
@@ -62,9 +67,17 @@ func main() {
 		port = "8080"
 	}
 
-	http.HandleFunc("/health", handleHealthCheck)
-	http.HandleFunc("/mqtt", handleMQTT)
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("/static"))))
+	e := echo.New()
+	if e == nil {
+		log.Fatal("e is nil")
+	}
+
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	e.GET("/", handleHealthCheck)
+	e.GET("/mqtt", handleMQTT)
+	e.Static("/static", "/static")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -79,7 +92,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatal(err)
-	}
+	log.Fatal(e.Start(":" + port))
 }
