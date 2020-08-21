@@ -92,5 +92,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Fatal(e.Start(":" + port))
+	if err := e.Start(":" + port); err != nil {
+		log.Fatal(err)
+	}
 }
