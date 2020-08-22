@@ -89,3 +89,5 @@ func (s *memoryStore) Destroy(key string) error {
 	delete(s.items, key)
 	return nil
 }
+
+func (s *memoryStore) Close() {}

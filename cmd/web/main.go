@@ -86,6 +86,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer store.Close()
 
 	broker, err = mqtt.NewBroker(ctx, store)
 	if err != nil {

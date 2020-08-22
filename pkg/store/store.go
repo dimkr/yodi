@@ -22,4 +22,5 @@ type Store interface {
 	Set(string) Set
 	Queue(string) Queue
 	Map(string) Map
+	Close()
 }

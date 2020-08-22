@@ -73,3 +73,7 @@ func (s *redisStore) Queue(key string) Queue {
 func (s *redisStore) Map(key string) Map {
 	return &redisMap{redisKey: redisKey{Key: key, Client: s.redisClient}}
 }
+
+func (s *redisStore) Close() {
+	s.redisClient.Close()
+}
