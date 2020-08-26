@@ -82,17 +82,18 @@ yodi_srcs = [
 	'client.c',
 	'worker.c',
 	'compress.c',
+	'base64.c',
 	'command.c',
 ]
 
 yodi_tests = [
 	'compress',
+	'base64',
+	'command',
 ]
 
 if ssl
 	yodi_c_args += ['-DYODI_SSL']
-	yodi_srcs += 'base64.c'
-	yodi_tests += ['base64', 'command']
 endif
 
 yodi_includes = include_directories('include')

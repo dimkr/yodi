@@ -54,8 +54,6 @@ static void handle_stop(const JSON_Object *cmd, JSON_Object *result)
 		json_object_set_string(result, "error", strerror(errno));
 }
 
-#ifdef YODI_SSL
-
 static char *encode_result(const void *p, const size_t len)
 {
 	yodi_autofree void *compressed = NULL;
@@ -68,16 +66,11 @@ static char *encode_result(const void *p, const size_t len)
 	return yodi_base64_encode(compressed, out);
 }
 
-#endif
-
 static void handle_shell(const JSON_Object *cmd, JSON_Object *result)
 {
 	struct timeval tv = {.tv_sec = SHELL_TIMEOUT};
 	int s[2];
-	yodi_autofree char *buf = NULL;
-#ifdef YODI_SSL
-	yodi_autofree char *enc = NULL;
-#endif
+	yodi_autofree char *buf = NULL, *enc = NULL;
 	const char *cmdline;
 	size_t len = 0;
 	ssize_t chunk;
@@ -146,14 +139,9 @@ static void handle_shell(const JSON_Object *cmd, JSON_Object *result)
 		len += (size_t)chunk;
 	}
 
-#ifdef YODI_SSL
 	enc = encode_result(buf, len);
 	if (enc)
 		json_object_set_string(result, "result", enc);
-#else
-	buf[len] = '\0';
-	json_object_set_string(result, "result", buf);
-#endif
 
 	waitpid(pid, NULL, WNOHANG);
 }
