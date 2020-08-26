@@ -62,6 +62,10 @@ yodi_c_args = [
 	'-D_GNU_SOURCE',
 ]
 
+if ssl
+	yodi_c_args += ['-DYODI_SSL']
+endif
+
 if host_machine.cpu_family() != 'mips'
 	krisa = subproject('krisa')
 
@@ -91,10 +95,6 @@ yodi_tests = [
 	'base64',
 	'command',
 ]
-
-if ssl
-	yodi_c_args += ['-DYODI_SSL']
-endif
 
 yodi_includes = include_directories('include')
 
