@@ -42,7 +42,7 @@
 #define BACKTRACE_SIZE 4096
 
 struct yodi_service {
-	int (*fn)(int, char **);
+	int (*fn)(int, char **, struct yodi_cpu_limit *);
 	const char *name;
 	pid_t pid;
 	int killfd;
@@ -57,6 +57,7 @@ static pid_t start_service(struct yodi_service *svcs,
                            const int logw,
                            const long delay)
 {
+	struct yodi_cpu_limit cpu;
 	struct timespec ts = {.tv_sec = delay};
 	struct yodi_service *svc = &svcs[i];
 	int s[2], killfd;
@@ -104,7 +105,10 @@ static pid_t start_service(struct yodi_service *svcs,
 
 		if (ts.tv_sec > 0)
 			nanosleep(&ts, NULL);
-		exit(svc->fn(argc, argv));
+
+		yodi_cpu_limit_arm(&cpu);
+
+		exit(svc->fn(argc, argv, &cpu));
 
 	case -1:
 		close(s[1]);

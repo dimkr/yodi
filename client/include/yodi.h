@@ -28,7 +28,7 @@
 #	include <yodi/command.h>
 #	include <yodi/cpu.h>
 
-int yodi_client(int argc, char *argv[]);
-int yodi_worker(int argc, char *argv[]);
+int yodi_client(int argc, char *argv[], struct yodi_cpu_limit *cpu);
+int yodi_worker(int argc, char *argv[], struct yodi_cpu_limit *cpu);
 
 #endif

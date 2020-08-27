@@ -25,9 +25,8 @@
 
 #include <yodi.h>
 
-int yodi_worker(int argc, char *argv[])
+int yodi_worker(int argc, char *argv[], struct yodi_cpu_limit *cpu)
 {
-	struct yodi_cpu_limit cpu;
 	struct timespec one = {.tv_sec = 1}, zero = {0};
 	siginfo_t si;
 	sigset_t sigs;
@@ -45,8 +44,6 @@ int yodi_worker(int argc, char *argv[])
 		yodi_error("%s", "Failed to open "YODI_DB_PATH);
 		return EXIT_FAILURE;
 	}
-
-	yodi_cpu_limit_arm(&cpu);
 
 	while (1) {
 		cmd = boydemdb_one(db, YODI_TYPE_COMMAND, &id, &size);
@@ -74,7 +71,7 @@ int yodi_worker(int argc, char *argv[])
 			break;
 		}
 
-		yodi_cpu_limit_rearm(&cpu);
+		yodi_cpu_limit_rearm(cpu);
 	}
 
 	return ret;

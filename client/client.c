@@ -128,7 +128,7 @@ static int report_crashes(MQTTClient *c,
 
 #endif
 
-int yodi_client(int argc, char *argv[])
+int yodi_client(int argc, char *argv[], struct yodi_cpu_limit *cpu)
 {
 	static char cmd_topic[256], result_topic[256], log_topic[256];
 #ifdef YODI_HAVE_KRISA
@@ -137,7 +137,6 @@ int yodi_client(int argc, char *argv[])
 	MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
 	Network n;
 	MQTTClient c;
-	struct yodi_cpu_limit cpu;
 	struct timespec ts = {.tv_sec = CONNECT_INTERVAL};
 	siginfo_t si;
 	sigset_t set;
@@ -270,8 +269,6 @@ connected:
 	c.private = db;
 	ts.tv_sec = RESULT_POLL_INTERVAL;
 
-	yodi_cpu_limit_arm(&cpu);
-
 	while (1) {
 		if (sigtimedwait(&set, &si, &ts) < 0) {
 			if (errno != EAGAIN)
@@ -301,7 +298,7 @@ connected:
 		if (MQTTKeepalive(&c, MQTT_TIMEOUT) != SUCCESS)
 			break;
 
-		yodi_cpu_limit_rearm(&cpu);
+		yodi_cpu_limit_rearm(cpu);
 	}
 
 	yodi_debug("Unsubscribing from %s", cmd_topic);
