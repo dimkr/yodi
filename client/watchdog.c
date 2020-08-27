@@ -28,6 +28,9 @@
 #include <time.h>
 #include <sys/prctl.h>
 #include <stdio.h>
+#include <sched.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #ifdef YODI_HAVE_KRISA
 #	include <krisa.h>
@@ -248,9 +251,11 @@ int main(int argc, char *argv[])
 		YODI_SVC(client),
 		YODI_SVC(worker),
 	};
+	struct sched_param sched = {.sched_priority = 0};
 	sigset_t mask, chld;
 	yodi_db_autoclose boydemdb db = BOYDEMDB_INIT;
 	int fds[2];
+	pid_t pid;
 	unsigned int i, n = sizeof(svcs) / sizeof(svcs[0]), id;
 	int sig, ret = EXIT_FAILURE;
 	yodi_autoclose int logr = -1, logw = -1;
@@ -273,6 +278,14 @@ int main(int argc, char *argv[])
 	}
 
 	if (sigprocmask(SIG_SETMASK, &mask, NULL) < 0)
+		return EXIT_FAILURE;
+
+	pid = getpid();
+
+	if (sched_setscheduler(pid, SCHED_OTHER, &sched) != 0)
+		return EXIT_FAILURE;
+
+	if (setpriority(PRIO_PROCESS, (int)pid, 0) < 0)
 		return EXIT_FAILURE;
 
 	papaw_hide_exe();
