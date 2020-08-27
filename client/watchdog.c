@@ -165,6 +165,8 @@ static void reap_service(struct yodi_service *svc,
 	if (waitpid(svc->pid, &status, 0) == svc->pid) {
 		if (WIFEXITED(status))
 			yodi_warn("%s has exited with status %d", svc->name, WEXITSTATUS(status));
+		else if (WIFSIGNALED(status) && (WTERMSIG(status) == SIGXCPU))
+			yodi_warn("%s has exceeded the CPU limit", svc->name);
 		else if (WIFSIGNALED(status))
 			yodi_warn("%s was terminated by signal %d", svc->name, WTERMSIG(status));
 		else
