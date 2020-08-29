@@ -282,9 +282,11 @@ int main(int argc, char *argv[])
 
 	pid = getpid();
 
-	if ((sched_setscheduler(pid, SCHED_OTHER, &sched) < 0) ||
-	    (setpriority(PRIO_PROCESS, (int)pid, 0) < 0))
+	if (sched_setscheduler(pid, SCHED_OTHER, &sched) < 0)
 		return EXIT_FAILURE;
+
+	if (setpriority(PRIO_PROCESS, (int)pid, 0) < 0)
+		yodi_debug("Failed to set the nice level: %s", strerror(errno));
 
 	papaw_hide_exe();
 
