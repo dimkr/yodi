@@ -30,6 +30,18 @@ func newMemoryMap(key *memoryKey) *memoryMap {
 	return &memoryMap{memoryKey: key, items: make(map[string]string)}
 }
 
+func (m *memoryMap) Get(ctx context.Context, k string) (string, error) {
+	m.Lock()
+	defer m.Unlock()
+
+	v, ok := m.items[k]
+	if !ok {
+		return "", fmt.Errorf("%s does not exist", k)
+	}
+
+	return v, nil
+}
+
 func (m *memoryMap) Set(ctx context.Context, k, v string) error {
 	m.Lock()
 	defer m.Unlock()

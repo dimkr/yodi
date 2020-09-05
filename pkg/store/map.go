@@ -20,6 +20,7 @@ import "context"
 
 // Map is an associative array
 type Map interface {
+	Get(context.Context, string) (string, error)
 	Set(context.Context, string, string) error
 	Remove(context.Context, string) error
 	Scan(context.Context, func(context.Context, string, string)) error

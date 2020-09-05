@@ -25,6 +25,10 @@ type redisMap struct {
 	redisKey
 }
 
+func (m *redisMap) Get(ctx context.Context, k string) (string, error) {
+	return m.Client.HGet(ctx, m.Key, k).Result()
+}
+
 func (m *redisMap) Set(ctx context.Context, k, v string) error {
 	_, err := m.Client.HSet(ctx, m.Key, k, v).Result()
 	return err
