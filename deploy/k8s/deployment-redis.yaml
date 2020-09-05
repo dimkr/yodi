@@ -1,3 +1,32 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis-data-volume
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  hostPath:
+    path: /tmp/data
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: redis-data
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data-claim
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: redis-data
+  volumeMode: Filesystem
+  volumeName: redis-data
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,10 +43,22 @@ spec:
       labels:
         app: redis
     spec:
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: redis-data-claim
       containers:
-      - image: redis:alpine
+      - args:
+        - --appendonly
+        - "yes"
+        command:
+        - redis-server
+        image: redis:alpine
         imagePullPolicy: IfNotPresent
         name: redis
         ports:
         - containerPort: 6379
           protocol: TCP
+        volumeMounts:
+          - mountPath: "/data"
+            name: data
