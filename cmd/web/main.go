@@ -20,6 +20,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/dimkr/yodi/pkg/mqtt"
 	"github.com/dimkr/yodi/pkg/store"
@@ -88,7 +89,23 @@ func main() {
 	}
 	defer store.Close()
 
-	broker, err = mqtt.NewBroker(ctx, store, mqtt.NewAuthenticator(store))
+	auth := mqtt.NewAuthenticator(store)
+
+	authMiddleware := middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
+		Validator: func(username, password string, c echo.Context) (bool, error) {
+			_, err := auth.AuthenticateUser(c.Request().Context(), username, password)
+			if err != nil {
+				return false, nil
+			}
+			return true, nil
+		},
+		Skipper: func(c echo.Context) bool {
+			return !strings.HasPrefix(c.Request().URL.Path, "/static")
+		},
+	})
+	e.Use(authMiddleware)
+
+	broker, err = mqtt.NewBroker(ctx, store, auth)
 	if err != nil {
 		log.Fatal(err)
 	}

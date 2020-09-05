@@ -18,6 +18,7 @@ package mqtt
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,7 +32,7 @@ type authenticator struct {
 
 // Authenticator authenticates MQTT clients
 type Authenticator interface {
-	GetUser(ctx context.Context, username, password string) (*User, error)
+	AuthenticateUser(ctx context.Context, username, password string) (*User, error)
 }
 
 // ACL defines permissions and allowed QoS levels for topics
@@ -89,7 +90,7 @@ func (a ACL) AuthenticateSubscribe(topic string, qos QoS) error {
 	return nil
 }
 
-func (a *authenticator) GetUser(ctx context.Context, username, password string) (*User, error) {
+func (a *authenticator) AuthenticateUser(ctx context.Context, username, password string) (*User, error) {
 	j, err := a.store.Map(usersMap).Get(ctx, username)
 	if err != nil {
 		return nil, fmt.Errorf("No such user '%s': %w", username, err)
@@ -100,7 +101,7 @@ func (a *authenticator) GetUser(ctx context.Context, username, password string) 
 		return nil, fmt.Errorf("Failed to find user '%s': %w", username, err)
 	}
 
-	if user.Password != password {
+	if subtle.ConstantTimeCompare([]byte(user.Password), []byte(password)) != 1 {
 		return nil, errors.New("bad password")
 	}
 
