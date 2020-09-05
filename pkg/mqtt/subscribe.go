@@ -23,9 +23,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// QoS is an MQTT QoS level
-type QoS uint8
-
 // SubscribeFixedHeader is the fixed header of a SUBSCRIBE control packet
 type SubscribeFixedHeader struct {
 	MessageID uint16
@@ -35,14 +32,6 @@ func (c *Client) authenticateSubscribe(topic string, qos QoS) error {
 	log.WithFields(c.logFields).Info("Authenticating subscribe")
 	return c.user.ACL.AuthenticateSubscribe(topic, qos)
 }
-
-const (
-	// QoS0 is MQTT QoS level 0
-	QoS0 = iota
-
-	// QoS1 is MQTT QoS level 1
-	QoS1
-)
 
 func (c *Client) handleSubscribe(messageID uint16, topic string, qos QoS) error {
 	if err := c.authenticateSubscribe(topic, qos); err != nil {
