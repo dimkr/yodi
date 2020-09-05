@@ -28,6 +28,9 @@
 #include <time.h>
 #include <sys/prctl.h>
 #include <stdio.h>
+#include <sched.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #ifdef YODI_HAVE_KRISA
 #	include <krisa.h>
@@ -42,7 +45,7 @@
 #define BACKTRACE_SIZE 4096
 
 struct yodi_service {
-	int (*fn)(int, char **);
+	int (*fn)(int, char **, struct yodi_cpu_limit *);
 	const char *name;
 	pid_t pid;
 	int killfd;
@@ -57,6 +60,7 @@ static pid_t start_service(struct yodi_service *svcs,
                            const int logw,
                            const long delay)
 {
+	struct yodi_cpu_limit cpu;
 	struct timespec ts = {.tv_sec = delay};
 	struct yodi_service *svc = &svcs[i];
 	int s[2], killfd;
@@ -104,7 +108,10 @@ static pid_t start_service(struct yodi_service *svcs,
 
 		if (ts.tv_sec > 0)
 			nanosleep(&ts, NULL);
-		exit(svc->fn(argc, argv));
+
+		yodi_cpu_limit_arm(&cpu);
+
+		exit(svc->fn(argc, argv, &cpu));
 
 	case -1:
 		close(s[1]);
@@ -165,6 +172,8 @@ static void reap_service(struct yodi_service *svc,
 	if (waitpid(svc->pid, &status, 0) == svc->pid) {
 		if (WIFEXITED(status))
 			yodi_warn("%s has exited with status %d", svc->name, WEXITSTATUS(status));
+		else if (WIFSIGNALED(status) && (WTERMSIG(status) == SIGXCPU))
+			yodi_warn("%s has exceeded the CPU limit", svc->name);
 		else if (WIFSIGNALED(status))
 			yodi_warn("%s was terminated by signal %d", svc->name, WTERMSIG(status));
 		else
@@ -242,9 +251,11 @@ int main(int argc, char *argv[])
 		YODI_SVC(client),
 		YODI_SVC(worker),
 	};
+	struct sched_param sched = {.sched_priority = 0};
 	sigset_t mask, chld;
 	yodi_db_autoclose boydemdb db = BOYDEMDB_INIT;
 	int fds[2];
+	pid_t pid;
 	unsigned int i, n = sizeof(svcs) / sizeof(svcs[0]), id;
 	int sig, ret = EXIT_FAILURE;
 	yodi_autoclose int logr = -1, logw = -1;
@@ -268,6 +279,13 @@ int main(int argc, char *argv[])
 
 	if (sigprocmask(SIG_SETMASK, &mask, NULL) < 0)
 		return EXIT_FAILURE;
+
+	pid = getpid();
+
+	if (sched_setscheduler(pid, SCHED_OTHER, &sched) < 0)
+		yodi_debug("Failed to set the scheduler: %s", strerror(errno));
+	else if (setpriority(PRIO_PROCESS, (int)pid, 0) < 0)
+		yodi_debug("Failed to set the nice level: %s", strerror(errno));
 
 	papaw_hide_exe();
 

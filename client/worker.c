@@ -25,7 +25,7 @@
 
 #include <yodi.h>
 
-int yodi_worker(int argc, char *argv[])
+int yodi_worker(int argc, char *argv[], struct yodi_cpu_limit *cpu)
 {
 	struct timespec one = {.tv_sec = 1}, zero = {0};
 	siginfo_t si;
@@ -70,6 +70,8 @@ int yodi_worker(int argc, char *argv[])
 			ret = EXIT_SUCCESS;
 			break;
 		}
+
+		yodi_cpu_limit_rearm(cpu);
 	}
 
 	return ret;

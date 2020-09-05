@@ -62,6 +62,10 @@ yodi_c_args = [
 	'-D_GNU_SOURCE',
 ]
 
+if ssl
+	yodi_c_args += ['-DYODI_SSL']
+endif
+
 if host_machine.cpu_family() != 'mips'
 	krisa = subproject('krisa')
 
@@ -82,18 +86,32 @@ yodi_srcs = [
 	'client.c',
 	'worker.c',
 	'compress.c',
+	'base64.c',
 	'command.c',
+	'cpu.c',
 ]
 
-yodi_tests = [
-	'compress',
-]
-
-if ssl
-	yodi_c_args += ['-DYODI_SSL']
-	yodi_srcs += 'base64.c'
-	yodi_tests += ['base64', 'command']
-endif
+yodi_tests = {
+	'compress': [
+		'compress.c',
+		'compress_test.c',
+	],
+	'base64': [
+		'base64.c',
+		'base64_test.c',
+	],
+	'command': [
+		'log.c',
+		'signal.c',
+		'base64.c',
+		'compress.c',
+		'command.c',
+		'command_test.c',
+	],
+	'cpu': [
+		'cpu_test.c',
+	],
+}
 
 yodi_includes = include_directories('include')
 
@@ -104,11 +122,9 @@ yodi = executable('yodi',
                   dependencies: yodi_dependencies,
                   include_directories: yodi_includes)
 
-foreach name: yodi_tests
+foreach name, srcs: yodi_tests
 	exe = executable('@0@_test'.format(name),
-	                 '@0@.c'.format(name),
-	                 yodi_srcs,
-	                 '@0@_test.c'.format(name),
+	                 srcs,
 	                 c_args: yodi_c_args,
 	                 dependencies: yodi_dependencies,
 	                 include_directories: yodi_includes)
