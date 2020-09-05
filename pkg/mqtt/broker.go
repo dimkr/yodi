@@ -32,6 +32,7 @@ import (
 type Broker struct {
 	store store.Store
 	ctx   context.Context
+	auth  Authenticator
 }
 
 const (
@@ -44,8 +45,8 @@ const (
 )
 
 // NewBroker creates a new MQTT broker
-func NewBroker(ctx context.Context, store store.Store) (*Broker, error) {
-	return &Broker{store: store, ctx: ctx}, nil
+func NewBroker(ctx context.Context, store store.Store, auth Authenticator) (*Broker, error) {
+	return &Broker{store: store, ctx: ctx, auth: auth}, nil
 }
 
 // NewClient creates a new MQTT client connected to a broker

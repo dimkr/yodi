@@ -33,7 +33,7 @@ type SubscribeFixedHeader struct {
 
 func (c *Client) authenticateSubscribe(topic string, qos QoS) error {
 	log.WithFields(c.logFields).Info("Authenticating subscribe")
-	return nil
+	return c.user.ACL.AuthenticateSubscribe(topic, qos)
 }
 
 const (

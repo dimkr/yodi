@@ -42,6 +42,8 @@ type Client struct {
 	broker               *Broker
 	messageQueue         chan *QueuedMessage
 	lastPingTime         time.Time
+	auth                 Authenticator
+	user                 *User
 }
 
 const (
@@ -78,6 +80,7 @@ func NewClient(parent context.Context, conn net.Conn, broker *Broker) (*Client, 
 		cancel:       cancel,
 		broker:       broker,
 		messageQueue: messageQueue,
+		auth:         broker.auth,
 	}, nil
 }
 

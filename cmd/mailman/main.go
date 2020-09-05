@@ -43,7 +43,7 @@ func main() {
 		}
 		defer store.Close()
 
-		broker, err := mqtt.NewBroker(ctx, store)
+		broker, err := mqtt.NewBroker(ctx, store, mqtt.NewAuthenticator(store))
 		if err != nil {
 			log.Fatal(err)
 		}

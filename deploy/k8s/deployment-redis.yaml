@@ -27,6 +27,16 @@ spec:
   volumeMode: Filesystem
   volumeName: redis-data
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-init-data
+data:
+  commands: |
+    HSET /users user1 '{"password": "password1", "acl": {"/0b8e29de-13a1-43cf-a793-4d898440550e/commands": {"subscribe": true, "qos": 1}, "/0b8e29de-13a1-43cf-a793-4d898440550e/results": {"publish": true, "qos": 1}, "/0b8e29de-13a1-43cf-a793-4d898440550e/log": {"publish": true}, "/0b8e29de-13a1-43cf-a793-4d898440550e/crashes": {"publish": true, "qos": 1}}}'
+    HSET /users user2 '{"password": "password2", "acl": {"/0b8e29de-13a1-43cf-a793-4d898440550e/commands": {"publish": true, "qos": 1}}}'
+    HSET /users user3 '{"password": "password3", "acl": {"/0b8e29de-13a1-43cf-a793-4d898440550e/results": {"subscribe": true, "qos": 1}}}'
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -47,6 +57,12 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: redis-data-claim
+        - name: init
+          configMap:
+            name: redis-init-data
+            items:
+            - key: "commands"
+              path: "commands"
       containers:
       - args:
         - --appendonly
@@ -62,3 +78,13 @@ spec:
         volumeMounts:
           - mountPath: "/data"
             name: data
+      initContainers:
+        - name: insert
+          image: redis:alpine
+          command: ['sh', '-c', '(redis-server --appendonly yes &); until nc -zw2 localhost 6379; do sleep 1; done; nc localhost 6379 < /init/commands']
+          volumeMounts:
+            - mountPath: "/data"
+              name: data
+            - name: init
+              mountPath: "/init"
+              readOnly: true

@@ -30,7 +30,7 @@ func TestAddClient_UniqueClientID(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	broker, err := NewBroker(ctx, store)
+	broker, err := NewBroker(ctx, store, NewAuthenticator(store))
 	assert.Nil(t, err)
 
 	clientID := "abcd"
@@ -48,7 +48,7 @@ func TestSubscribe_Twice(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	broker, err := NewBroker(ctx, store)
+	broker, err := NewBroker(ctx, store, NewAuthenticator(store))
 	assert.Nil(t, err)
 
 	clientID := "abcd"
@@ -67,7 +67,7 @@ func TestSubscribe_TwoBrokers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	broker, err := NewBroker(ctx, store)
+	broker, err := NewBroker(ctx, store, NewAuthenticator(store))
 	assert.Nil(t, err)
 
 	clientID := "abcd"
@@ -76,7 +76,7 @@ func TestSubscribe_TwoBrokers(t *testing.T) {
 	assert.Nil(t, broker.Subscribe(ctx, clientID, topic))
 	assert.NotNil(t, broker.Subscribe(ctx, clientID, topic))
 
-	otherBroker, err := NewBroker(ctx, store)
+	otherBroker, err := NewBroker(ctx, store, NewAuthenticator(store))
 	assert.Nil(t, err)
 
 	assert.NotNil(t, broker.Subscribe(ctx, clientID, topic))
@@ -98,7 +98,7 @@ func TestQueueMessage_QoS0(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	broker, err := NewBroker(ctx, store)
+	broker, err := NewBroker(ctx, store, NewAuthenticator(store))
 	assert.Nil(t, err)
 
 	clientID := "abcd"
@@ -141,7 +141,7 @@ func TestQueueMessage_QoS1(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	broker, err := NewBroker(ctx, store)
+	broker, err := NewBroker(ctx, store, NewAuthenticator(store))
 	assert.Nil(t, err)
 
 	clientID := "abcd"
@@ -192,7 +192,7 @@ func TestQueueMessage_QoS1_MessageIDReuse(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	broker, err := NewBroker(ctx, store)
+	broker, err := NewBroker(ctx, store, NewAuthenticator(store))
 	assert.Nil(t, err)
 
 	clientID := "abcd"

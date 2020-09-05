@@ -23,7 +23,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func (c *Client) authenticatePublish(topic string, qos QoS) error {
+	log.WithFields(c.logFields).Info("Authenticating publish")
+	return c.user.ACL.AuthenticatePublish(topic, qos)
+}
+
 func (c *Client) handlePublish(topic string, msg []byte, messageID uint16, qos QoS) error {
+	if err := c.authenticatePublish(topic, qos); err != nil {
+		return err
+	}
+
 	if err := c.broker.QueueMessage(topic, string(msg), messageID, qos); err != nil {
 		return err
 	}

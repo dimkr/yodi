@@ -67,6 +67,13 @@ const (
 
 func (c *Client) authenticateConnect(clientID, username, password string) error {
 	log.WithFields(c.logFields).Info("Authenticating ", clientID, "@", username, "/", password)
+
+	var err error
+	c.user, err = c.auth.GetUser(c.ctx, username, password)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
