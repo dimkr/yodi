@@ -8,10 +8,9 @@ spec:
   capacity:
     storage: 1Gi
   hostPath:
-    path: /tmp/data
+    path: /data/redis
   persistentVolumeReclaimPolicy: Retain
   storageClassName: redis-data
-  volumeMode: Filesystem
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -24,8 +23,6 @@ spec:
     requests:
       storage: 1Gi
   storageClassName: redis-data
-  volumeMode: Filesystem
-  volumeName: redis-data
 ---
 apiVersion: v1
 kind: ConfigMap
