@@ -64,7 +64,7 @@ func (a ACL) AuthenticatePublish(topic string, qos QoS) error {
 		return errors.New("publishing is forbidden")
 	}
 
-	if qos <= topicACL.QoS {
+	if qos > topicACL.QoS {
 		return fmt.Errorf("QoS level for %s is forbidden", topic)
 	}
 
@@ -83,7 +83,7 @@ func (a ACL) AuthenticateSubscribe(topic string, qos QoS) error {
 		return errors.New("subscription is forbidden")
 	}
 
-	if qos <= topicACL.QoS {
+	if qos > topicACL.QoS {
 		return fmt.Errorf("QoS level for %s is forbidden", topic)
 	}
 
