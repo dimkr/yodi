@@ -19,10 +19,13 @@ package store
 import (
 	"context"
 	"os"
+	"runtime"
 
 	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 )
+
+var poolSize = 512 * runtime.NumCPU()
 
 type redisStore struct {
 	redisClient *redis.Client
@@ -33,6 +36,8 @@ func connectToRedis(ctx context.Context) (*redis.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	opts.PoolSize = poolSize
 
 	// Heroku Redis runs Redis 5.0.9, which doesn't have the username argument
 	for _, username := range []string{opts.Username, ""} {
