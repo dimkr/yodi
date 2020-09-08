@@ -37,6 +37,7 @@ script:
   - make minikube-start
   - make -j`nproc` minikube-build
   - make minikube-deploy
+  - ! curl -sf http://@`minikube -p yodi ip`:`kubectl get svc web -o json | jq .spec.ports[0].nodePort`/static/client-linux-i386
   - curl -o /tmp/client http://user1:password1@`minikube -p yodi ip`:`kubectl get svc web -o json | jq .spec.ports[0].nodePort`/static/client-linux-i386
   - chmod 755 /tmp/client
   - /tmp/client -h `minikube -p yodi ip` -p `kubectl get svc web -o json | jq .spec.ports[0].nodePort` -u /mqtt -i 0b8e29de-13a1-43cf-a793-4d898440550e -U user1 -P password1 &
