@@ -85,3 +85,18 @@ spec:
             - name: init
               mountPath: "/init"
               readOnly: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: redis
+  name: redis
+  resourceVersion: "0"
+spec:
+  ports:
+  - port: 6379
+    protocol: TCP
+    targetPort: 6379
+  selector:
+    app: redis
