@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
 	"strings"
@@ -99,6 +100,10 @@ func main() {
 		Validator: func(username, password string, c echo.Context) (bool, error) {
 			_, err := auth.AuthenticateUser(c.Request().Context(), username, password)
 			if err != nil {
+				if !errors.Is(err, mqtt.ErrBadCredentials) {
+					log.WithError(err).Error("authentication failed")
+					return false, err
+				}
 				return false, nil
 			}
 			return true, nil

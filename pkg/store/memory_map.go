@@ -36,7 +36,7 @@ func (m *memoryMap) Get(ctx context.Context, k string) (string, error) {
 
 	v, ok := m.items[k]
 	if !ok {
-		return "", fmt.Errorf("%s does not exist", k)
+		return "", fmt.Errorf("%s: %w", k, ErrNoKey)
 	}
 
 	return v, nil
@@ -56,7 +56,7 @@ func (m *memoryMap) Remove(ctx context.Context, k string) error {
 	defer m.Unlock()
 
 	if _, ok := m.items[k]; !ok {
-		return fmt.Errorf("key does not exist in map")
+		return fmt.Errorf("%s: %w", k, ErrNoKey)
 	}
 
 	delete(m.items, k)

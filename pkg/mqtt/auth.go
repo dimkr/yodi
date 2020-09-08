@@ -48,9 +48,10 @@ type User struct {
 	Password string `json:"password"`
 }
 
-const (
-	usersMap = "/users"
-)
+const usersMap = "/users"
+
+// ErrBadCredentials indicates authentication failure
+var ErrBadCredentials = errors.New("bad credentials")
 
 // AuthenticatePublish determines whether or not a client is allowed to publish
 // a message
@@ -93,7 +94,10 @@ func (a ACL) AuthenticateSubscribe(topic string, qos QoS) error {
 func (a *authenticator) AuthenticateUser(ctx context.Context, username, password string) (*User, error) {
 	j, err := a.store.Map(usersMap).Get(ctx, username)
 	if err != nil {
-		return nil, fmt.Errorf("No such user '%s': %w", username, err)
+		if errors.Is(err, store.ErrNoKey) {
+			return nil, ErrBadCredentials
+		}
+		return nil, fmt.Errorf("Failed to find user '%s': %w", username, err)
 	}
 
 	var user User
@@ -102,7 +106,7 @@ func (a *authenticator) AuthenticateUser(ctx context.Context, username, password
 	}
 
 	if subtle.ConstantTimeCompare([]byte(user.Password), []byte(password)) != 1 {
-		return nil, errors.New("bad password")
+		return nil, ErrBadCredentials
 	}
 
 	return &user, nil

@@ -18,7 +18,10 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/go-redis/redis/v8"
 )
 
 type redisMap struct {
@@ -26,7 +29,11 @@ type redisMap struct {
 }
 
 func (m *redisMap) Get(ctx context.Context, k string) (string, error) {
-	return m.Client.HGet(ctx, m.Key, k).Result()
+	val, err := m.Client.HGet(ctx, m.Key, k).Result()
+	if errors.Is(err, redis.Nil) {
+		return "", fmt.Errorf("%s: %w", k, ErrNoKey)
+	}
+	return val, err
 }
 
 func (m *redisMap) Set(ctx context.Context, k, v string) error {
@@ -41,7 +48,7 @@ func (m *redisMap) Remove(ctx context.Context, k string) error {
 	}
 
 	if n != 1 {
-		return fmt.Errorf("key does not exist in map")
+		return fmt.Errorf("%s: %w", k, ErrNoKey)
 	}
 
 	return nil

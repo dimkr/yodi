@@ -16,7 +16,13 @@
 
 package store
 
-import "context"
+import (
+	"context"
+	"errors"
+)
+
+// ErrNoKey is returned when a key does not exist
+var ErrNoKey = errors.New("no such key")
 
 // Map is an associative array
 type Map interface {
