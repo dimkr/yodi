@@ -31,7 +31,7 @@ import (
 )
 
 var (
-	upgrader = websocket.Upgrader{Subprotocols: []string{"mqtt"}}
+	upgrader = websocket.Upgrader{Subprotocols: []string{mqtt.WebSocketProtocol}}
 	broker   *mqtt.Broker
 )
 
@@ -47,6 +47,10 @@ func handleMQTT(c echo.Context) error {
 		return err
 	}
 	defer conn.Close()
+
+	if conn.Subprotocol() != mqtt.WebSocketProtocol {
+		return echo.NewHTTPError(http.StatusBadRequest, "")
+	}
 
 	client, err := mqtt.NewWebSocketClient(r.Context(), conn, broker)
 	if err != nil {

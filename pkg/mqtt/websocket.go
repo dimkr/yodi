@@ -14,6 +14,10 @@ type webSocketConn struct {
 	frame io.Reader
 }
 
+// WebSocketProtocol is the WebSocket protocol (Sec-WebSocket-Protocol) name for
+// MQTT
+const WebSocketProtocol = "mqtt"
+
 func wrapWebSocket(conn *websocket.Conn) net.Conn {
 	return &webSocketConn{Conn: conn}
 }
