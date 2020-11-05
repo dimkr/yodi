@@ -22,7 +22,7 @@ before_install:
 
 install:
   - go get golang.org/x/lint/golint
-  - python3 -m pip install meson ninja
+  - python3 -m pip install "meson<0.56.0" ninja
   - sudo tar -xzf ~/dl/arm-any32-linux-musleabi.tar.gz -C /
   - sudo tar -xzf ~/dl/armeb-any32-linux-musleabi.tar.gz -C /
   - sudo tar -xzf ~/dl/mips-any32-linux-musl.tar.gz -C /
