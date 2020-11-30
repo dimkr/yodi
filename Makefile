@@ -18,19 +18,11 @@
 
 all: build
 
-broker: go.mod go.sum cmd/broker/*.go pkg/*/*.go
-	CGO_ENABLED=0 go test -timeout 10s ./cmd/broker ./pkg/...
-	CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/broker
+build-broker: deploy/docker/Dockerfile.broker go.mod go.sum cmd/broker/*.go pkg/*/*.go
+	DOCKER_BUILDKIT=1 docker build -f deploy/docker/Dockerfile.broker -t yodi/broker .
 
-build-broker: deploy/docker/Dockerfile.broker broker
-	docker build -f deploy/docker/Dockerfile.broker -t yodi/broker .
-
-mailman: go.mod go.sum cmd/mailman/*.go pkg/*/*.go
-	CGO_ENABLED=0 go test -timeout 10s ./cmd/mailman ./pkg/...
-	CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/mailman
-
-build-mailman: deploy/docker/Dockerfile.mailman mailman
-	docker build -f deploy/docker/Dockerfile.mailman -t yodi/mailman .
+build-mailman: deploy/docker/Dockerfile.mailman go.mod go.sum cmd/mailman/*.go pkg/*/*.go
+	DOCKER_BUILDKIT=1 docker build -f deploy/docker/Dockerfile.mailman -t yodi/mailman .
 
 client-linux-arm-ssl:
 	./client/cross_compile.sh arm-any32-linux-musleabi $@
@@ -64,12 +56,8 @@ client-linux-i386:
 
 build-client: client-linux-arm-ssl client-linux-arm client-linux-armeb-ssl client-linux-armeb client-linux-mips-ssl client-linux-mips client-linux-mipsel-ssl client-linux-mipsel client-linux-i386-ssl client-linux-i386
 
-web: go.mod go.sum cmd/web/*.go
-	CGO_ENABLED=0 go test -timeout 10s ./cmd/web
-	CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/web
-
-build-web: deploy/docker/Dockerfile.web build-client web
-	docker build -f deploy/docker/Dockerfile.web -t yodi/web .
+build-web: deploy/docker/Dockerfile.web build-client go.mod go.sum cmd/web/*.go
+	DOCKER_BUILDKIT=1 docker build -f deploy/docker/Dockerfile.web -t yodi/web .
 
 build: build-broker build-mailman build-web
 
@@ -94,7 +82,7 @@ deploy: deploy/k8s/*
 	for x in `kubectl get pods -o json | jq -r ".items[].metadata.name"`; do kubectl wait --for=condition=ready --timeout=60s pod/$$x || exit 1; done
 
 minikube-start:
-	minikube -p yodi status | grep -q Running || minikube -p yodi start --disk-size=2gb
+	minikube -p yodi status 2>/dev/null | grep -q Running || minikube -p yodi start --disk-size=2gb
 
 minikube-build:
 	eval $$(minikube -p yodi docker-env) && $(MAKE) build

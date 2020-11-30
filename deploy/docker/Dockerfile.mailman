@@ -1,3 +1,5 @@
+# syntax = docker/dockerfile:1-experimental@sha256:de85b2f3a3e8a2f7fe48e8e84a65f6fdd5cd5183afa6412fff9caa6871649c44
+
 # This file is part of yodi.
 #
 # Copyright 2020 Dima Krasner
@@ -14,6 +16,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine
-ADD mailman /
+FROM golang:alpine AS builder
+WORKDIR /src
+ENV CGO_ENABLED=0
+COPY go.mod go.sum /src/
+RUN go mod download
+COPY pkg /src/pkg
+COPY cmd/mailman /src/cmd/mailman
+RUN --mount=type=cache,target=/root/.cache/go-build go test -timeout 10s ./cmd/mailman ./pkg/...
+RUN --mount=type=cache,target=/root/.cache/go-build go build -ldflags "-s -w" ./cmd/mailman
+
+FROM scratch
+COPY --from=builder /src/mailman /
 CMD /mailman
