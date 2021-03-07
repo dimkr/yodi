@@ -47,7 +47,8 @@ jobs:
         run: |
           test -f ~/dl/minikube || curl -Lo ~/dl/minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
           test -f ~/dl/kubectl || curl -Lo ~/dl/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
-          install -D -m 755 ~/dl/minikube ~/dl/kubectl ~/.local/bin/
+          mkdir -p ~/.local/bin/
+          install -m 755 ~/dl/minikube ~/dl/kubectl ~/.local/bin/
       - name: Get ~/go/pkg/mod/cache
         uses: actions/cache@v2
         with:
