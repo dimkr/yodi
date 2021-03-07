@@ -15,6 +15,10 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+      - name: Install APT packages
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends mosquitto-clients qemu-user-static
       - name: Install Go
         uses: actions/setup-go@v2
         with:
@@ -26,6 +30,24 @@ jobs:
           key: ${{ github.workflow }}-dl-${{ github.sha }}
           restore-keys: |
             ${{ github.workflow }}-dl-
+      - name: Install toolchains
+        run: |
+          mkdir -p ~/dl
+          test -f ~/dl/arm-any32-linux-musleabi.tar.gz || curl -Lo ~/dl/arm-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz
+          test -f ~/dl/armeb-any32-linux-musleabi.tar.gz || curl -Lo ~/dl/armeb-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/armeb-any32-linux-musleabi.tar.gz
+          test -f ~/dl/mips-any32-linux-musl.tar.gz || curl -Lo ~/dl/mips-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz
+          test -f ~/dl/mipsel-any32-linux-musl.tar.gz || curl -Lo ~/dl/mipsel-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mipsel-any32-linux-musl.tar.gz
+          test -f ~/dl/i386-any32-linux-musl.tar.gz || curl -Lo ~/dl/i386-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/i386-any32-linux-musl.tar.gz
+          sudo tar -xzf ~/dl/arm-any32-linux-musleabi.tar.gz -C /
+          sudo tar -xzf ~/dl/armeb-any32-linux-musleabi.tar.gz -C /
+          sudo tar -xzf ~/dl/mips-any32-linux-musl.tar.gz -C /
+          sudo tar -xzf ~/dl/mipsel-any32-linux-musl.tar.gz -C /
+          sudo tar -xzf ~/dl/i386-any32-linux-musl.tar.gz -C /
+      - name: Install minikube and kubectl
+        run: |
+          test -f ~/dl/minikube || curl -Lo ~/dl/minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+          test -f ~/dl/kubectl || curl -Lo ~/dl/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+          install -m 755 ~/dl/minikube ~/dl/kubectl ~/.local/bin/
       - name: Get ~/go/pkg/mod/cache
         uses: actions/cache@v2
         with:
@@ -33,6 +55,8 @@ jobs:
           key: ${{ github.workflow }}-go-pkg-mod-cache-${{ github.sha }}
           restore-keys: |
             ${{ github.workflow }}-go-pkg-mod-cache-
+      - name: Install golint
+        run: go get golang.org/x/lint/golint
       - name: Get ~/.cache/pip
         uses: actions/cache@v2
         with:
@@ -40,26 +64,8 @@ jobs:
           key: ${{ github.workflow }}-cache-pip-${{ github.sha }}
           restore-keys: |
             ${{ github.workflow }}-cache-pip-
-      - name: Install tools
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends mosquitto-clients qemu-user-static
-          mkdir -p ~/dl
-          test -f ~/dl/arm-any32-linux-musleabi.tar.gz || curl -Lo ~/dl/arm-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz
-          test -f ~/dl/armeb-any32-linux-musleabi.tar.gz || curl -Lo ~/dl/armeb-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/armeb-any32-linux-musleabi.tar.gz
-          test -f ~/dl/mips-any32-linux-musl.tar.gz || curl -Lo ~/dl/mips-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz
-          test -f ~/dl/mipsel-any32-linux-musl.tar.gz || curl -Lo ~/dl/mipsel-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mipsel-any32-linux-musl.tar.gz
-          test -f ~/dl/i386-any32-linux-musl.tar.gz || curl -Lo ~/dl/i386-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/i386-any32-linux-musl.tar.gz
-          test -f ~/dl/minikube || curl -Lo ~/dl/minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-          test -f ~/dl/kubectl || curl -Lo ~/dl/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
-          go get golang.org/x/lint/golint
-          python3 -m pip install "meson<0.56.0" ninja
-          sudo tar -xzf ~/dl/arm-any32-linux-musleabi.tar.gz -C /
-          sudo tar -xzf ~/dl/armeb-any32-linux-musleabi.tar.gz -C /
-          sudo tar -xzf ~/dl/mips-any32-linux-musl.tar.gz -C /
-          sudo tar -xzf ~/dl/mipsel-any32-linux-musl.tar.gz -C /
-          sudo tar -xzf ~/dl/i386-any32-linux-musl.tar.gz -C /
-          install -m 755 ~/dl/minikube ~/dl/kubectl ~/.local/bin/
+      - name: Install Meson
+        run: python3 -m pip install "meson<0.56.0" ninja
       - name: Get ~/.ccache
         uses: actions/cache@v2
         with:
@@ -81,6 +87,7 @@ jobs:
           echo $PATH
           echo ~/go/bin
           ls -la ~/go/bin
+          golint
           make test-backend
           make -j`nproc` test-client
           make -j`nproc` build-client
