@@ -78,6 +78,9 @@ jobs:
         run: |
           export PATH="~/go/bin:$PATH"
           find ~/ -name golint
+          echo $PATH
+          echo ~/go/bin
+          ls -la ~/go/bin
           make test-backend
           make -j`nproc` test-client
           make -j`nproc` build-client
