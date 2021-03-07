@@ -26,13 +26,13 @@ jobs:
           key: ${{ github.workflow }}-dl-${{ github.sha }}
           restore-keys: |
             ${{ github.workflow }}-dl-
-      - name: Get ~/gopath/pkg/mod/cache
+      - name: Get ~/go/pkg/mod/cache
         uses: actions/cache@v2
         with:
           path: ~/.minikube/cache
-          key: ${{ github.workflow }}-gopath-pkg-mod-cache-${{ github.sha }}
+          key: ${{ github.workflow }}-go-pkg-mod-cache-${{ github.sha }}
           restore-keys: |
-            ${{ github.workflow }}-gopath-pkg-mod-cache-
+            ${{ github.workflow }}-go-pkg-mod-cache-
       - name: Get ~/.cache/pip
         uses: actions/cache@v2
         with:
