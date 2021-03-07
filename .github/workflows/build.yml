@@ -1,0 +1,90 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * 4'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Install Go
+      - uses: actions/setup-go@v2
+        with:
+          stable: true
+      - name: Get ~/dl
+        uses: actions/cache@v2
+        with:
+          path: ~/dl
+          key: ${{ github.workflow }}-dl-${{ github.sha }}
+          restore-keys: |
+            ${{ github.workflow }}-dl-
+      - name: Get ~/gopath/pkg/mod/cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.minikube/cache
+          key: ${{ github.workflow }}-gopath-pkg-mod-cache-${{ github.sha }}
+          restore-keys: |
+            ${{ github.workflow }}-gopath-pkg-mod-cache-
+      - name: Get ~/.cache/pip
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ github.workflow }}-cache-pip-${{ github.sha }}
+          restore-keys: |
+            ${{ github.workflow }}-cache-pip-
+      - name: Install tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends mosquitto-clients qemu-user-static
+          mkdir -p ~/dl
+          test -f ~/dl/arm-any32-linux-musleabi.tar.gz || curl -Lo ~/dl/arm-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/arm-any32-linux-musleabi.tar.gz
+          test -f ~/dl/armeb-any32-linux-musleabi.tar.gz || curl -Lo ~/dl/armeb-any32-linux-musleabi.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/armeb-any32-linux-musleabi.tar.gz
+          test -f ~/dl/mips-any32-linux-musl.tar.gz || curl -Lo ~/dl/mips-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mips-any32-linux-musl.tar.gz
+          test -f ~/dl/mipsel-any32-linux-musl.tar.gz || curl -Lo ~/dl/mipsel-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/mipsel-any32-linux-musl.tar.gz
+          test -f ~/dl/i386-any32-linux-musl.tar.gz || curl -Lo ~/dl/i386-any32-linux-musl.tar.gz https://github.com/dimkr/toolchains/releases/latest/download/i386-any32-linux-musl.tar.gz
+          test -f ~/dl/minikube || curl -Lo ~/dl/minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+          test -f ~/dl/kubectl || curl -Lo ~/dl/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+          go get golang.org/x/lint/golint
+          python3 -m pip install "meson<0.56.0" ninja
+          sudo tar -xzf ~/dl/arm-any32-linux-musleabi.tar.gz -C /
+          sudo tar -xzf ~/dl/armeb-any32-linux-musleabi.tar.gz -C /
+          sudo tar -xzf ~/dl/mips-any32-linux-musl.tar.gz -C /
+          sudo tar -xzf ~/dl/mipsel-any32-linux-musl.tar.gz -C /
+          sudo tar -xzf ~/dl/i386-any32-linux-musl.tar.gz -C /
+          install -m 755 ~/dl/minikube ~/dl/kubectl ~/.local/bin/
+      - name: Get ~/.ccache
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: ${{ github.workflow }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ github.workflow }}-ccache-
+      - name: Get ~/.minikube/cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.minikube/cache
+          key: ${{ github.workflow }}-minikube-cache-${{ github.sha }}
+          restore-keys: |
+            ${{ github.workflow }}-minikube-cache-
+      - name: Run tests
+        run: |
+          make test-backend
+          make -j`nproc` test-client
+          make -j`nproc` build-client
+          make minikube-start
+          make -j`nproc` minikube-build
+          make minikube-deploy
+          "! curl -sf http://`minikube -p yodi ip`:`kubectl get svc web -o json | jq .spec.ports[0].nodePort`/static/client-linux-i386"
+          curl -o /tmp/client http://user1:password1@`minikube -p yodi ip`:`kubectl get svc web -o json | jq .spec.ports[0].nodePort`/static/client-linux-i386
+          chmod 755 /tmp/client
+          /tmp/client -h `minikube -p yodi ip` -p `kubectl get svc web -o json | jq .spec.ports[0].nodePort` -u /mqtt -i 0b8e29de-13a1-43cf-a793-4d898440550e -U user1 -P password1 &
+          (sleep 1 && mosquitto_pub -h `minikube -p yodi ip` -p `kubectl get svc broker -o json | jq .spec.ports[0].nodePort` -u user3 -P password3 -t /0b8e29de-13a1-43cf-a793-4d898440550e/commands -f ci/command.json -q 1) &
+          mosquitto_sub -h `minikube -p yodi ip` -p `kubectl get svc broker -o json | jq .spec.ports[0].nodePort` -u user2 -P password2 -t /0b8e29de-13a1-43cf-a793-4d898440550e/results -W 10 -C 1 > result
+          cmp result ci/result.json
